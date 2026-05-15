@@ -1,0 +1,138 @@
+package io.github.hiwepy.openclaw;
+
+/**
+ * 调用 OpenClaw Gateway {@code POST /hooks/agent} 的请求体，与
+ * <a href="https://docs.openclaw.ai/gateway/configuration-reference">Gateway Hooks 文档</a>一致。
+ * <p>
+ * {@code sessionKey} 仅在网关开启 {@code hooks.allowRequestSessionKey} 且符合
+ * {@code hooks.allowedSessionKeyPrefixes} 等策略时才会被接受；否则网关可能拒绝请求。
+ * </p>
+ */
+public class InvokeAgentRequest {
+
+    /** 必填：发给 agent 的提示/任务内容 */
+    private String message;
+
+    private String agentId;
+    private String name = "Generation";
+    private String wakeMode = "now";
+    private int timeoutSeconds = 300;
+
+    /**
+     * 会话键；需要网关 {@code hooks.allowRequestSessionKey=true} 等配置配合。
+     */
+    private String sessionKey;
+
+    /**
+     * 为 {@code true} 时将最终回复投递到通道；{@code null} 表示不在 JSON 中发送该字段（使用网关默认）。
+     */
+    private Boolean deliver;
+
+    /** 投递目标通道，常与 {@link #deliver} 配合；例如文档中的 {@code last} */
+    private String channel;
+
+    /** 投递目标标识（如收件人），文档字段 {@code to} */
+    private String to;
+
+    /** 模型覆盖，形如 {@code openai/gpt-5.5} 或网关允许的其他 ref */
+    private String model;
+
+    /** 思考等级或开关，如文档示例 {@code off} */
+    private String thinking;
+
+    public InvokeAgentRequest() {
+    }
+
+    public InvokeAgentRequest(String agentId, String message) {
+        this.agentId = agentId;
+        this.message = message;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public String getAgentId() {
+        return agentId;
+    }
+
+    public void setAgentId(String agentId) {
+        this.agentId = agentId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getWakeMode() {
+        return wakeMode;
+    }
+
+    public void setWakeMode(String wakeMode) {
+        this.wakeMode = wakeMode;
+    }
+
+    public int getTimeoutSeconds() {
+        return timeoutSeconds;
+    }
+
+    public void setTimeoutSeconds(int timeoutSeconds) {
+        this.timeoutSeconds = timeoutSeconds;
+    }
+
+    public String getSessionKey() {
+        return sessionKey;
+    }
+
+    public void setSessionKey(String sessionKey) {
+        this.sessionKey = sessionKey;
+    }
+
+    public Boolean getDeliver() {
+        return deliver;
+    }
+
+    public void setDeliver(Boolean deliver) {
+        this.deliver = deliver;
+    }
+
+    public String getChannel() {
+        return channel;
+    }
+
+    public void setChannel(String channel) {
+        this.channel = channel;
+    }
+
+    public String getTo() {
+        return to;
+    }
+
+    public void setTo(String to) {
+        this.to = to;
+    }
+
+    public String getModel() {
+        return model;
+    }
+
+    public void setModel(String model) {
+        this.model = model;
+    }
+
+    public String getThinking() {
+        return thinking;
+    }
+
+    public void setThinking(String thinking) {
+        this.thinking = thinking;
+    }
+}
