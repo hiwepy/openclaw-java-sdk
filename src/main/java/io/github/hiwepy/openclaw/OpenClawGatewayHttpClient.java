@@ -12,7 +12,11 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * OpenClaw Gateway Webhooks 客户端。
+ * OpenClaw Gateway <b>HTTP Webhooks</b> 客户端（{@code /hooks/*}）。
+ * <p>
+ * 与官方 TypeScript {@code @openclaw/sdk} 的 WebSocket 控制面不同：本类仅封装无状态的 Hook HTTP 调用；
+ * 需要会话流式、{@code agent.wait}、事件归一化等能力时请参阅 OpenClaw App SDK 文档或本仓库后续 WS 实现。
+ * </p>
  * <p>覆盖文档中的三个入口：</p>
  * <ul>
  *     <li>{@code POST /hooks/wake}：向主会话队列注入系统事件（text 必填，mode 可选）</li>
@@ -67,23 +71,16 @@ public class OpenClawGatewayHttpClient implements AutoCloseable {
 
     /**
      * 对应 {@code POST /hooks/agent}：触发一次 agent webhook 调用并返回解析结果。
-     * <p>请求体字段与文档一致：{@code message}（required）、{@code name}、{@code agentId}、
-     * {@code wakeMode}、{@code deliver}、{@code channel}、{@code to}、
-     * {@code model}、{@code thinking}、{@code timeoutSeconds}。
-     * 当前 {@link InvokeAgentRequest} 已建模字段为 {@code message}、{@code name}、
-     * {@code agentId}、{@code wakeMode}、{@code timeoutSeconds}。</p>
+     * <p>请求体与 Gateway 文档一致：{@code message}（required）、{@code name}、{@code agentId}、
+     * {@code sessionKey}、{@code wakeMode}、{@code deliver}、{@code channel}、{@code to}、
+     * {@code model}、{@code thinking}、{@code timeoutSeconds}；可选字段为空时省略键。</p>
      *
      * @param request 请求体字段
      */
     public InvokeAgentResult postHooksAgent(InvokeAgentRequest request) {
         Objects.requireNonNull(request, "request");
 
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("message", request.getMessage());
-        body.put("agentId", request.getAgentId());
-        body.put("name", request.getName() != null ? request.getName() : "Generation");
-        body.put("wakeMode", request.getWakeMode() != null ? request.getWakeMode() : "now");
-        body.put("timeoutSeconds", request.getTimeoutSeconds());
+        Map<String, Object> body = buildHooksAgentBody(request);
 
         HttpResponse<String> response = postWebhook(HOOKS_AGENT_PATH, body);
         String respBody = response.getBody();
@@ -133,8 +130,51 @@ public class OpenClawGatewayHttpClient implements AutoCloseable {
     }
 
     /**
+     * 构建 {@code POST /hooks/agent} 的请求体：{@code message} 必填；其余可选字段仅非空时写入，
+     * 避免覆盖网关默认值。
+     *
+     * @param request 非 null
+     * @return 有序 Map，供 JSON 序列化
+     */
+    static Map<String, Object> buildHooksAgentBody(InvokeAgentRequest request) {
+        Objects.requireNonNull(request, "request");
+        if (request.getMessage() == null || request.getMessage().isBlank()) {
+            throw new IllegalArgumentException("hooks/agent: message is required");
+        }
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("message", request.getMessage());
+        if (request.getAgentId() != null && !request.getAgentId().isEmpty()) {
+            body.put("agentId", request.getAgentId());
+        }
+        String name = request.getName();
+        body.put("name", (name != null && !name.isEmpty()) ? name : "Generation");
+        String wakeMode = request.getWakeMode();
+        body.put("wakeMode", (wakeMode != null && !wakeMode.isEmpty()) ? wakeMode : "now");
+        body.put("timeoutSeconds", request.getTimeoutSeconds());
+        if (request.getSessionKey() != null && !request.getSessionKey().isEmpty()) {
+            body.put("sessionKey", request.getSessionKey());
+        }
+        if (request.getDeliver() != null) {
+            body.put("deliver", request.getDeliver());
+        }
+        if (request.getChannel() != null && !request.getChannel().isEmpty()) {
+            body.put("channel", request.getChannel());
+        }
+        if (request.getTo() != null && !request.getTo().isEmpty()) {
+            body.put("to", request.getTo());
+        }
+        if (request.getModel() != null && !request.getModel().isEmpty()) {
+            body.put("model", request.getModel());
+        }
+        if (request.getThinking() != null && !request.getThinking().isEmpty()) {
+            body.put("thinking", request.getThinking());
+        }
+        return body;
+    }
+
+    /**
      * 底层 webhook POST 调用：统一做鉴权头、异常语义与状态码检查。
-     * <p>鉴权头优先使用文档推荐的 {@code Authorization: Bearer <token>}。</p>
+     * <p>鉴权：{@code Authorization: Bearer} 或 {@code x-openclaw-token}（由 {@link OpenClawClientConfig#isHooksUseXOpenclawTokenHeader()} 二选一）。</p>
      */
     private HttpResponse<String> postWebhook(String hookPath, Map<String, Object> body) {
         String base = config.getGatewayBaseUrl();
@@ -142,15 +182,20 @@ public class OpenClawGatewayHttpClient implements AutoCloseable {
             throw new OpenClawHttpException("OpenClaw gatewayBaseUrl is empty", null);
         }
         String url = base.replaceAll("/+$", "") + hookPath;
-        String token = config.resolveBearerToken();
+        // 仅使用 hooks.token（及兼容字段 apiKey），绝不使用 gatewayAuthToken，避免与 gateway.auth.token 混同
+        String token = config.resolveHooksBearerToken();
         try {
             String json = objectMapper.writeValueAsString(body);
             var req = http.post(url)
                     .header("Content-Type", "application/json")
                     .body(json);
             if (token != null && !token.isEmpty()) {
-                // Webhook 文档推荐 Authorization: Bearer <token>（也支持 x-openclaw-token）。
-                req = req.header("Authorization", "Bearer " + token);
+                // 文档：Bearer 与 x-openclaw-token 二选一，禁止 query-string token
+                if (config.isHooksUseXOpenclawTokenHeader()) {
+                    req = req.header("x-openclaw-token", token);
+                } else {
+                    req = req.header("Authorization", "Bearer " + token);
+                }
             }
             HttpResponse<String> response = req.asString();
             int status = response.getStatus();

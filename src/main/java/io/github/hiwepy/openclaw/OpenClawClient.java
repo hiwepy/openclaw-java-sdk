@@ -8,10 +8,18 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * 门面：HTTP Gateway 调用与通用本地 CLI（{@link #cli()}）相互独立，无自动降级。
+ * 门面：<b>HTTP Webhooks</b>（{@code /hooks/*}）与通用本地 CLI（{@link #cli()}）相互独立，无自动降级。
  * <p>
- * 远程调用请使用 {@link #agent(InvokeAgentRequest)}；任意顶层命令请使用 {@link #cli()}。
+ * {@link #agent(InvokeAgentRequest)} / {@link #wake} / {@link #hook} 仅走 Gateway Webhook HTTP 路径，
+ * 使用配置中的 {@link OpenClawClientConfig#getHooksToken()} 与兼容字段 {@link OpenClawClientConfig#getApiKey()}；
+ * 不要把 {@code gateway.auth.token}（{@link OpenClawClientConfig#getGatewayAuthToken()}）当作 Hook Bearer。
+ * </p>
+ * <p>
+ * 任意顶层命令请使用 {@link #cli()}。
  * 若创建了默认 {@link OpenClawGatewayHttpClient}，在不再使用时可调用 {@link #close()} 释放 HTTP 资源。
+ * </p>
+ * <p>
+ * 官方外部 App SDK 以 WebSocket 为主；完整控制面与流式事件不在本 HTTP 封装范围内。
  * </p>
  */
 public class OpenClawClient implements AutoCloseable {
