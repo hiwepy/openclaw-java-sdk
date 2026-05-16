@@ -1,5 +1,6 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
 import io.github.hiwepy.openclaw.cli.args.CliSubArgs;
 
 import java.util.ArrayList;
@@ -88,7 +89,7 @@ public final class SystemOptions implements CliSubArgs {
         this.eventText = b.eventText;
         this.eventMode = b.eventMode;
         this.json = b.json;
-        this.extra = b.extra == null ? List.of() : List.copyOf(b.extra);
+        this.extra = b.extra == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.extra);
     }
 
     /**

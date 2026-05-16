@@ -1,5 +1,6 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import io.github.hiwepy.openclaw.cli.args.CliSubArgs;
 
 import java.util.ArrayList;
@@ -383,12 +384,12 @@ public final class AgentOptions implements CliSubArgs {
          * @throws IllegalStateException 不满足文档必填规则时
          */
         public AgentOptions build() {
-            if (message == null || message.isBlank()) {
+            if (message == null || OpenClawStrings.isBlank(message)) {
                 throw new IllegalStateException("agent: --message is required and must be non-blank");
             }
-            boolean hasSessionSelector = (to != null && !to.isBlank())
-                    || (sessionId != null && !sessionId.isBlank())
-                    || (agent != null && !agent.isBlank());
+            boolean hasSessionSelector = (to != null && OpenClawStrings.isNotBlank(to))
+                    || (sessionId != null && OpenClawStrings.isNotBlank(sessionId))
+                    || (agent != null && OpenClawStrings.isNotBlank(agent));
             if (!hasSessionSelector) {
                 throw new IllegalStateException(
                         "agent: at least one of --to, --session-id, or --agent is required (non-blank)");

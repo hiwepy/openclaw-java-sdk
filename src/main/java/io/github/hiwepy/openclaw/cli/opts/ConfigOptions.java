@@ -1,5 +1,6 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
 import io.github.hiwepy.openclaw.cli.args.CliSubArgs;
 
 import java.util.ArrayList;
@@ -28,8 +29,8 @@ public final class ConfigOptions implements CliSubArgs {
      * @param b 构建器快照
      */
     private ConfigOptions(Builder b) {
-        this.sections = List.copyOf(b.sections);
-        this.tail = List.copyOf(b.tail);
+        this.sections = OpenClawLists.copyOf(b.sections);
+        this.tail = OpenClawLists.copyOf(b.tail);
     }
 
     /**

@@ -1,5 +1,6 @@
 package io.github.hiwepy.openclaw.cli;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -31,7 +32,7 @@ public final class OpenClawCliRequest {
         this.container = b.container;
         this.noColor = b.noColor;
         this.timeoutSeconds = b.timeoutSeconds;
-        this.arguments = List.copyOf(b.arguments);
+        this.arguments = OpenClawLists.copyOf(b.arguments);
     }
 
     public static Builder builder() {

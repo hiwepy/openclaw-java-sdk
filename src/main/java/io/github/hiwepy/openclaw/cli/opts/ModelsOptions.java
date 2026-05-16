@@ -1,5 +1,7 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
+import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import io.github.hiwepy.openclaw.cli.args.CliSubArgs;
 
 import java.util.ArrayList;
@@ -127,7 +129,7 @@ public final class ModelsOptions implements CliSubArgs {
         this.authSetDefault = b.authSetDefault;
         this.pasteProfileId = b.pasteProfileId;
         this.pasteExpiresIn = b.pasteExpiresIn;
-        this.extra = b.extra == null ? List.of() : List.copyOf(b.extra);
+        this.extra = b.extra == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.extra);
     }
 
     /**
@@ -162,7 +164,7 @@ public final class ModelsOptions implements CliSubArgs {
                 break;
             case SET:
                 out.add("set");
-                if (modelOrAlias != null && !modelOrAlias.isBlank()) {
+                if (modelOrAlias != null && OpenClawStrings.isNotBlank(modelOrAlias)) {
                     out.add(modelOrAlias.trim());
                 }
                 break;

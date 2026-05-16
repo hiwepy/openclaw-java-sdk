@@ -1,5 +1,6 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -14,25 +15,24 @@ class CliBatch9OptionsTest {
     @Test
     void voicecall_call_and_expose() {
         assertEquals(
-                List.of("call", "--to", "+1", "--message", "Hello", "--mode", "notify"),
+                OpenClawLists.of("call", "--to", "+1", "--message", "Hello", "--mode", "notify"),
                 VoicecallOptions.builder().call("+1", "Hello", "notify").build().toSubcommandArguments());
         assertEquals(
-                List.of("expose", "--mode", "serve"),
+                OpenClawLists.of("expose", "--mode", "serve"),
                 VoicecallOptions.builder().expose(VoicecallOptions.ExposeMode.SERVE).build().toSubcommandArguments());
     }
 
     @Test
     void clawbot_qr() {
         assertEquals(
-                List.of("qr", "--remote", "--json"),
+                OpenClawLists.of("qr", "--remote", "--json"),
                 ClawbotOptions.builder().qr().remote(true).json(true).build().toSubcommandArguments());
     }
 
     @Test
     void acp_bridge_and_client() {
         assertEquals(
-                List.of(
-                        "--url",
+                OpenClawLists.of("--url",
                         "wss://g:1",
                         "--token-file",
                         "/t",
@@ -48,7 +48,7 @@ class CliBatch9OptionsTest {
                         .build()
                         .toSubcommandArguments());
         assertEquals(
-                List.of("client", "--server-args", "--url", "wss://h", "--token-file", "/tok"),
+                OpenClawLists.of("client", "--server-args", "--url", "wss://h", "--token-file", "/tok"),
                 AcpOptions.builder()
                         .client()
                         .addServerArg("--url")

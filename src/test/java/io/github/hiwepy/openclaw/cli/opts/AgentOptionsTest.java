@@ -1,5 +1,6 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
 import io.github.hiwepy.openclaw.OpenClawClientConfig;
 import io.github.hiwepy.openclaw.cli.OpenClawCliExecutor;
 import io.github.hiwepy.openclaw.cli.OpenClawCliRequest;
@@ -25,7 +26,7 @@ class AgentOptionsTest {
                 .message("Summarize logs")
                 .build();
         assertEquals(
-                List.of("--message", "Summarize logs", "--agent", "ops"),
+                OpenClawLists.of("--message", "Summarize logs", "--agent", "ops"),
                 opts.toSubcommandArguments());
     }
 
@@ -42,8 +43,7 @@ class AgentOptionsTest {
                 .local(false)
                 .build();
         assertEquals(
-                List.of(
-                        "--message", "Trace logs",
+                OpenClawLists.of("--message", "Trace logs",
                         "--to", "+15555550123",
                         "--thinking", "medium",
                         "--verbose", "on",
@@ -62,7 +62,7 @@ class AgentOptionsTest {
                 .verbose("maybe")
                 .build();
         assertEquals(
-                List.of("--message", "x", "--session-id", "1234", "--thinking", "custom-level", "--verbose", "maybe"),
+                OpenClawLists.of("--message", "x", "--session-id", "1234", "--thinking", "custom-level", "--verbose", "maybe"),
                 opts.toSubcommandArguments());
     }
 

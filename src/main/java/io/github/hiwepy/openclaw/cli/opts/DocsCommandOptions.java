@@ -1,5 +1,6 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
 import io.github.hiwepy.openclaw.cli.args.CliSubArgs;
 
 import java.util.ArrayList;
@@ -23,7 +24,7 @@ public final class DocsCommandOptions implements CliSubArgs {
      * @param b 构建器快照
      */
     private DocsCommandOptions(Builder b) {
-        this.queryWords = List.copyOf(b.queryWords);
+        this.queryWords = OpenClawLists.copyOf(b.queryWords);
     }
 
     /**

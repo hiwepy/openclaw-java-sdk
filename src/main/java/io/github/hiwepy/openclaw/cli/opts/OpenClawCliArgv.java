@@ -1,5 +1,6 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import java.util.List;
 
 /**
@@ -20,7 +21,7 @@ final class OpenClawCliArgv {
      * @param value 选项值
      */
     static void addIfPresent(List<String> out, String flag, String value) {
-        if (value != null && !value.isBlank()) {
+        if (value != null && OpenClawStrings.isNotBlank(value)) {
             out.add(flag);
             out.add(value);
         }
@@ -93,7 +94,7 @@ final class OpenClawCliArgv {
             return;
         }
         for (String v : values) {
-            if (v != null && !v.isBlank()) {
+            if (v != null && OpenClawStrings.isNotBlank(v)) {
                 out.add(flag);
                 out.add(v.trim());
             }

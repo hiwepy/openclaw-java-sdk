@@ -1,5 +1,7 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
+import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import io.github.hiwepy.openclaw.cli.args.CliSubArgs;
 
 import java.util.ArrayList;
@@ -101,13 +103,13 @@ public final class DevicesOptions implements CliSubArgs {
         this.requestId = b.requestId;
         this.approveLatest = b.approveLatest;
         this.role = b.role;
-        this.scopes = b.scopes == null ? List.of() : List.copyOf(b.scopes);
+        this.scopes = b.scopes == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.scopes);
         this.url = b.url;
         this.token = b.token;
         this.password = b.password;
         this.timeout = b.timeout;
         this.json = b.json;
-        this.extra = b.extra == null ? List.of() : List.copyOf(b.extra);
+        this.extra = b.extra == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.extra);
     }
 
     /**
@@ -129,7 +131,7 @@ public final class DevicesOptions implements CliSubArgs {
                 break;
             case REMOVE:
                 out.add("remove");
-                if (deviceId != null && !deviceId.isBlank()) {
+                if (deviceId != null && OpenClawStrings.isNotBlank(deviceId)) {
                     out.add(deviceId.trim());
                 }
                 break;
@@ -142,13 +144,13 @@ public final class DevicesOptions implements CliSubArgs {
                 out.add("approve");
                 if (approveLatest) {
                     out.add("--latest");
-                } else if (requestId != null && !requestId.isBlank()) {
+                } else if (requestId != null && OpenClawStrings.isNotBlank(requestId)) {
                     out.add(requestId.trim());
                 }
                 break;
             case REJECT:
                 out.add("reject");
-                if (requestId != null && !requestId.isBlank()) {
+                if (requestId != null && OpenClawStrings.isNotBlank(requestId)) {
                     out.add(requestId.trim());
                 }
                 break;
@@ -157,7 +159,7 @@ public final class DevicesOptions implements CliSubArgs {
                 OpenClawCliArgv.addIfPresent(out, "--device", deviceId);
                 OpenClawCliArgv.addIfPresent(out, "--role", role);
                 for (String s : scopes) {
-                    if (s != null && !s.isBlank()) {
+                    if (s != null && OpenClawStrings.isNotBlank(s)) {
                         out.add("--scope");
                         out.add(s.trim());
                     }
@@ -293,7 +295,7 @@ public final class DevicesOptions implements CliSubArgs {
          * @return {@code this}
          */
         public Builder scope(String scope) {
-            if (scope != null && !scope.isBlank()) {
+            if (scope != null && OpenClawStrings.isNotBlank(scope)) {
                 scopes.add(scope.trim());
             }
             return this;

@@ -1,5 +1,6 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -15,7 +16,7 @@ class CliReviewPartialRichTest {
     void gateway_command_health_via_builder() {
         GatewayRpcOptions rpc = GatewayRpcOptions.builder().url("ws://127.0.0.1:18789").build();
         assertEquals(
-                List.of("health", "--url", "ws://127.0.0.1:18789"),
+                OpenClawLists.of("health", "--url", "ws://127.0.0.1:18789"),
                 GatewayCommandOptions.builder().health(rpc).build().toSubcommandArguments());
     }
 
@@ -25,7 +26,7 @@ class CliReviewPartialRichTest {
         GatewayCliArgv.GatewayStatusOptions extra =
                 GatewayCliArgv.GatewayStatusOptions.builder().deep(true).build();
         assertEquals(
-                List.of("status", "--json", "--deep"),
+                OpenClawLists.of("status", "--json", "--deep"),
                 DaemonOptions.builder()
                         .subcommand(DaemonOptions.Subcommand.STATUS)
                         .statusRpc(rpc)

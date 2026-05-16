@@ -49,17 +49,17 @@ public class OpenClawCliExecutor {
 
         try {
             int exit = executor.execute(cmd);
-            String stdout = out.toString(StandardCharsets.UTF_8);
-            String stderr = err.toString(StandardCharsets.UTF_8);
+            String stdout = new String(out.toByteArray(), StandardCharsets.UTF_8);
+            String stderr = new String(err.toByteArray(), StandardCharsets.UTF_8);
             return new OpenClawCliResult(exit, stdout, stderr);
         } catch (Exception e) {
             log.warn("openclaw execution failed: {}", e.getMessage());
-            String stderr = err.toString(StandardCharsets.UTF_8);
+            String stderr = new String(err.toByteArray(), StandardCharsets.UTF_8);
             if (!stderr.isEmpty()) {
                 stderr = stderr + "\n";
             }
             stderr = stderr + e.getMessage();
-            return new OpenClawCliResult(-1, out.toString(StandardCharsets.UTF_8), stderr);
+            return new OpenClawCliResult(-1, new String(out.toByteArray(), StandardCharsets.UTF_8), stderr);
         }
     }
 

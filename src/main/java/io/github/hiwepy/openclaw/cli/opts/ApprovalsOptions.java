@@ -1,5 +1,7 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
+import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import io.github.hiwepy.openclaw.cli.args.CliSubArgs;
 
 import java.util.ArrayList;
@@ -96,7 +98,7 @@ public final class ApprovalsOptions implements CliSubArgs {
         this.stdin = b.stdin;
         this.allowlistPattern = b.allowlistPattern;
         this.agent = b.agent;
-        this.extra = b.extra == null ? List.of() : List.copyOf(b.extra);
+        this.extra = b.extra == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.extra);
     }
 
     /**
@@ -126,14 +128,14 @@ public final class ApprovalsOptions implements CliSubArgs {
             case ALLOWLIST_ADD:
                 out.add("allowlist");
                 out.add("add");
-                if (allowlistPattern != null && !allowlistPattern.isBlank()) {
+                if (allowlistPattern != null && OpenClawStrings.isNotBlank(allowlistPattern)) {
                     out.add(allowlistPattern.trim());
                 }
                 break;
             case ALLOWLIST_REMOVE:
                 out.add("allowlist");
                 out.add("remove");
-                if (allowlistPattern != null && !allowlistPattern.isBlank()) {
+                if (allowlistPattern != null && OpenClawStrings.isNotBlank(allowlistPattern)) {
                     out.add(allowlistPattern.trim());
                 }
                 break;

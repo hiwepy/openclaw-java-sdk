@@ -1,5 +1,6 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -17,7 +18,7 @@ class GatewayCliArgvTest {
                 .url("ws://127.0.0.1:18789")
                 .build();
         assertEquals(
-                List.of("health", "--url", "ws://127.0.0.1:18789"),
+                OpenClawLists.of("health", "--url", "ws://127.0.0.1:18789"),
                 GatewayCliArgv.health(rpc));
     }
 
@@ -30,7 +31,7 @@ class GatewayCliArgvTest {
                 .requireRpc(true)
                 .build();
         assertEquals(
-                List.of("status", "--json", "--require-rpc"),
+                OpenClawLists.of("status", "--json", "--require-rpc"),
                 GatewayCliArgv.status(rpc, extra));
     }
 
@@ -41,7 +42,7 @@ class GatewayCliArgvTest {
                 .ssh("user@gateway-host")
                 .build();
         assertEquals(
-                List.of("probe", "--json", "--ssh", "user@gateway-host"),
+                OpenClawLists.of("probe", "--json", "--ssh", "user@gateway-host"),
                 GatewayCliArgv.probe(rpc, p));
     }
 }

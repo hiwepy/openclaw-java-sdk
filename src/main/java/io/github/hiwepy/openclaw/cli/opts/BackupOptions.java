@@ -1,5 +1,7 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
+import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import io.github.hiwepy.openclaw.cli.args.CliSubArgs;
 
 import java.util.ArrayList;
@@ -71,7 +73,7 @@ public final class BackupOptions implements CliSubArgs {
         this.noIncludeWorkspace = b.noIncludeWorkspace;
         this.onlyConfig = b.onlyConfig;
         this.verifyArchivePath = b.verifyArchivePath;
-        this.extra = b.extra == null ? List.of() : List.copyOf(b.extra);
+        this.extra = b.extra == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.extra);
     }
 
     /**
@@ -97,7 +99,7 @@ public final class BackupOptions implements CliSubArgs {
             OpenClawCliArgv.addFlag(out, "--only-config", onlyConfig);
         } else {
             out.add("verify");
-            if (verifyArchivePath != null && !verifyArchivePath.isBlank()) {
+            if (verifyArchivePath != null && OpenClawStrings.isNotBlank(verifyArchivePath)) {
                 out.add(verifyArchivePath.trim());
             }
         }
