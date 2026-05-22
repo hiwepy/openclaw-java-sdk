@@ -37,9 +37,6 @@ import java.util.Objects;
  */
 public class OpenClawGatewayHttpClient implements AutoCloseable {
 
-    private static final String HOOKS_AGENT_PATH = "/hooks/agent";
-    private static final String HOOKS_WAKE_PATH = "/hooks/wake";
-    private static final String HOOKS_PREFIX = "/hooks/";
     /**
      * 轻量解析响应 JSON 的共享 mapper，避免在静态解析方法中重复创建对象。
      */
@@ -82,7 +79,7 @@ public class OpenClawGatewayHttpClient implements AutoCloseable {
 
         Map<String, Object> body = buildHooksAgentBody(request);
 
-        HttpResponse<String> response = postWebhook(HOOKS_AGENT_PATH, body);
+        HttpResponse<String> response = postWebhook(resolveHooksSubPath("agent"), body);
         String respBody = response.getBody();
         int status = response.getStatus();
 
@@ -111,7 +108,7 @@ public class OpenClawGatewayHttpClient implements AutoCloseable {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("text", text);
         body.put("mode", (mode == null || mode.isBlank()) ? "now" : mode);
-        return postWebhook(HOOKS_WAKE_PATH, body).getBody();
+        return postWebhook(resolveHooksSubPath("wake"), body).getBody();
     }
 
     /**
@@ -126,7 +123,7 @@ public class OpenClawGatewayHttpClient implements AutoCloseable {
     public String postMappedHook(String hookName, Map<String, Object> payload) {
         String normalized = normalizeHookName(hookName);
         Map<String, Object> body = payload != null ? payload : Collections.emptyMap();
-        return postWebhook(HOOKS_PREFIX + normalized, body).getBody();
+        return postWebhook(resolveHooksSubPath(normalized), body).getBody();
     }
 
     /**
@@ -170,6 +167,18 @@ public class OpenClawGatewayHttpClient implements AutoCloseable {
             body.put("thinking", request.getThinking());
         }
         return body;
+    }
+
+    /**
+     * 拼接 {@link OpenClawClientConfig#resolveHooksPath()} 与子路径（如 {@code agent}、{@code wake}、映射名）。
+     */
+    private String resolveHooksSubPath(String subPath) {
+        String base = config.resolveHooksPath();
+        String child = subPath != null ? subPath.trim() : "";
+        if (child.startsWith("/")) {
+            child = child.substring(1);
+        }
+        return child.isEmpty() ? base : base + "/" + child;
     }
 
     /**

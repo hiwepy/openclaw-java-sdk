@@ -85,6 +85,11 @@ public class OpenClawClientConfig {
     private boolean hooksUseXOpenclawTokenHeader = false;
 
     /**
+     * Gateway HTTP Webhooks 基础路径，对应 {@code hooks.path}，默认 {@code /hooks}。
+     */
+    private String hooksPath = "/hooks";
+
+    /**
      * 解析用于 {@code /hooks/*} HTTP Webhook 请求的 Bearer 令牌。
      *
      * @return {@link #hooksToken} 非空则用之，否则 {@link #apiKey}，均为空则空字符串
@@ -105,5 +110,22 @@ public class OpenClawClientConfig {
     @Deprecated
     public String resolveBearerToken() {
         return resolveHooksBearerToken();
+    }
+
+    /**
+     * 规范化 {@link #hooksPath}，保证以 {@code /} 开头且不以 {@code /} 结尾。
+     */
+    public String resolveHooksPath() {
+        String raw = hooksPath != null ? hooksPath.trim() : "";
+        if (raw.isEmpty()) {
+            raw = "/hooks";
+        }
+        if (!raw.startsWith("/")) {
+            raw = "/" + raw;
+        }
+        while (raw.endsWith("/") && raw.length() > 1) {
+            raw = raw.substring(0, raw.length() - 1);
+        }
+        return raw;
     }
 }
