@@ -20,6 +20,10 @@ public class InvokeAgentRequest {
 
     /**
      * 会话键；需要网关 {@code hooks.allowRequestSessionKey=true} 等配置配合。
+     * <p>
+     * 推荐通过 {@link OpenClawSessionKeys} 或 {@link OpenClawClient#agentWithStableSession} /
+     * {@link OpenClawClient#agentOneShotForPeer} / {@link OpenClawClient#agentOneShot} 设置，而非手写字符串。
+     * </p>
      */
     private String sessionKey;
 

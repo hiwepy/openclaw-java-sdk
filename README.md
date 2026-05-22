@@ -20,6 +20,29 @@ Spring Boot 应用请使用 [openclaw-spring-boot-starter](../openclaw-spring-bo
 
 与 [Gateway configuration-reference — Hooks](https://docs.openclaw.ai/gateway/configuration-reference) 对齐的可选字段：`sessionKey`、`deliver`、`channel`、`to`、`model`、`thinking`；未设置的属性**不会**出现在 JSON 中。`sessionKey` 需网关配置 `hooks.allowRequestSessionKey` 等策略，否则可能被拒绝。
 
+### Hook `sessionKey` 约定（`OpenClawSessionKeys` / `OpenClawClient`）
+
+| 场景 | sessionKey | SDK 用法 |
+|------|------------|----------|
+| 一次性、无 peer | 不传 → Gateway 生成 `hook:<uuid>` | `client.agentOneShot(request)` |
+| 一次性、有 peer | `hook:<peerId>:<uuid>` | `client.agentOneShotForPeer(peerId, request)` |
+| 固定多轮 | `hook:<agentId>:<peerId>` | `client.agentWithStableSession(agentId, peerId, request)` 或 `agentWithStableSession(peerId, request)`（`request` 已含 `agentId`） |
+
+也可手动：`OpenClawSessionKeys.forStableSession(...)` / `forEphemeralPeer(...)` / `newCorrelationId()` 写入 `InvokeAgentRequest#setSessionKey`，再调用 `agent(request)`。
+
+```java
+// 一次性、无 peer → Gateway 生成 hook:<uuid>
+client.agentOneShot(request);
+
+// 一次性、有 peer → hook:<peerId>:<uuid>
+client.agentOneShotForPeer(userId, request);
+
+// 固定多轮 → hook:<agentId>:<peerId>
+client.agentWithStableSession("xiaohongshu-data-assistant", userId, request);
+```
+
+Gateway 建议：`hooks.allowRequestSessionKey: true`，`hooks.allowedSessionKeyPrefixes: ["hook:"]`。
+
 OpenClaw 官方外部 [App SDK](https://docs.openclaw.ai/) 以 **WebSocket** 连 Gateway（`connect`、流式事件、`agent.wait` 等）。本 Java 库现阶段提供 **Webhook HTTP** + **本地 `openclaw` CLI**；若需与 TS `@openclaw/sdk` 对等的 WS 能力，需另行集成或等待本仓库扩展。
 
 ## CLI 封装与文档映射

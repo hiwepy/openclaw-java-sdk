@@ -10,7 +10,8 @@ import java.util.Objects;
 /**
  * 门面：<b>HTTP Webhooks</b>（{@code /hooks/*}）与通用本地 CLI（{@link #cli()}）相互独立，无自动降级。
  * <p>
- * {@link #agent(InvokeAgentRequest)} / {@link #wake} / {@link #hook} 仅走 Gateway Webhook HTTP 路径，
+ * {@link #agent(InvokeAgentRequest)} / {@link #agentOneShot} / {@link #agentOneShotForPeer} /
+ * {@link #agentWithStableSession} / {@link #wake} / {@link #hook} 仅走 Gateway Webhook HTTP 路径，
  * 使用配置中的 {@link OpenClawClientConfig#getHooksToken()} 与兼容字段 {@link OpenClawClientConfig#getApiKey()}；
  * 不要把 {@code gateway.auth.token}（{@link OpenClawClientConfig#getGatewayAuthToken()}）当作 Hook Bearer。
  * </p>
@@ -100,6 +101,82 @@ public class OpenClawClient implements AutoCloseable {
     }
 
     /**
+     * 一次性 Hook（无 peer）：不在 JSON 中发送 {@code sessionKey}，由 Gateway 生成 {@code hook:&lt;uuid&gt;}。
+     *
+     * @param request 请求体；若已设置 {@code sessionKey} 会被忽略
+     */
+    public InvokeAgentResult agentOneShot(InvokeAgentRequest request) {
+        InvokeAgentRequest copy = copyRequest(Objects.requireNonNull(request, "request"));
+        copy.setSessionKey(null);
+        return agent(copy);
+    }
+
+    /**
+     * 一次性 Hook（有 peer）：{@code sessionKey = hook:<peerId>:<uuid>}，每次调用默认新 UUID。
+     *
+     * @param peerId  业务 peer（userId 等）
+     * @param request 请求体；若未设置 {@code sessionKey} 则自动填充
+     */
+    public InvokeAgentResult agentOneShotForPeer(String peerId, InvokeAgentRequest request) {
+        Objects.requireNonNull(peerId, "peerId");
+        InvokeAgentRequest copy = copyRequest(Objects.requireNonNull(request, "request"));
+        if (isBlank(copy.getSessionKey())) {
+            copy.setSessionKey(OpenClawSessionKeys.forEphemeralPeer(peerId));
+        }
+        return agent(copy);
+    }
+
+    /**
+     * 一次性 Hook（有 peer + 指定 correlationId）：{@code hook:<peerId>:<correlationId>}。
+     *
+     * @param peerId          业务 peer
+     * @param correlationId   本次唯一 id
+     * @param request         请求体
+     */
+    public InvokeAgentResult agentOneShotForPeer(String peerId, String correlationId, InvokeAgentRequest request) {
+        Objects.requireNonNull(peerId, "peerId");
+        Objects.requireNonNull(correlationId, "correlationId");
+        InvokeAgentRequest copy = copyRequest(Objects.requireNonNull(request, "request"));
+        if (isBlank(copy.getSessionKey())) {
+            copy.setSessionKey(OpenClawSessionKeys.forEphemeralPeer(peerId, correlationId));
+        }
+        return agent(copy);
+    }
+
+    /**
+     * 固定多轮 Hook：{@code sessionKey = hook:<agentId>:<peerId>}；未设置 {@code agentId} 时写入 {@code agentId}。
+     *
+     * @param agentId 路由 agent
+     * @param peerId  业务 peer
+     * @param request 请求体
+     */
+    public InvokeAgentResult agentWithStableSession(String agentId, String peerId, InvokeAgentRequest request) {
+        Objects.requireNonNull(agentId, "agentId");
+        Objects.requireNonNull(peerId, "peerId");
+        InvokeAgentRequest copy = copyRequest(Objects.requireNonNull(request, "request"));
+        copy.setSessionKey(OpenClawSessionKeys.forStableSession(agentId, peerId));
+        if (isBlank(copy.getAgentId())) {
+            copy.setAgentId(agentId.trim());
+        }
+        return agent(copy);
+    }
+
+    /**
+     * 固定多轮 Hook：从 {@code request.agentId} 与 {@code peerId} 构造 {@code hook:<agentId>:<peerId>}。
+     *
+     * @param peerId  业务 peer
+     * @param request 请求体；{@code agentId} 必填
+     */
+    public InvokeAgentResult agentWithStableSession(String peerId, InvokeAgentRequest request) {
+        Objects.requireNonNull(peerId, "peerId");
+        InvokeAgentRequest copy = copyRequest(Objects.requireNonNull(request, "request"));
+        if (isBlank(copy.getAgentId())) {
+            throw new IllegalArgumentException("agentId is required on request");
+        }
+        return agentWithStableSession(copy.getAgentId(), peerId, copy);
+    }
+
+    /**
      * 调用映射 webhook {@code POST /hooks/<name>}。
      *
      * @param hookName 映射名（如 {@code gmail}）
@@ -130,5 +207,28 @@ public class OpenClawClient implements AutoCloseable {
     @Override
     public void close() {
         gatewayHttpClient.close();
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
+    /**
+     * 浅拷贝 {@link InvokeAgentRequest}，避免 Hook 便捷方法修改调用方实例。
+     */
+    static InvokeAgentRequest copyRequest(InvokeAgentRequest source) {
+        InvokeAgentRequest copy = new InvokeAgentRequest();
+        copy.setMessage(source.getMessage());
+        copy.setAgentId(source.getAgentId());
+        copy.setName(source.getName());
+        copy.setWakeMode(source.getWakeMode());
+        copy.setTimeoutSeconds(source.getTimeoutSeconds());
+        copy.setSessionKey(source.getSessionKey());
+        copy.setDeliver(source.getDeliver());
+        copy.setChannel(source.getChannel());
+        copy.setTo(source.getTo());
+        copy.setModel(source.getModel());
+        copy.setThinking(source.getThinking());
+        return copy;
     }
 }
