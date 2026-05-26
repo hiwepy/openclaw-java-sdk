@@ -381,6 +381,7 @@
         <junit.version>5.8.2</junit.version>
         <slf4j.version>1.7.36</slf4j.version>
         <lombok.version>1.18.30</lombok.version>
+        <java-websocket.version>1.5.7</java-websocket.version>
 
         <maven.version>3.0</maven.version>
         <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>

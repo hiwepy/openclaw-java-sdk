@@ -4,6 +4,7 @@ import io.github.hiwepy.openclaw.OpenClawClientConfig;
 import io.github.hiwepy.openclaw.ws.protocol.*;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -84,7 +85,7 @@ class OpenClawWsProtocolTest {
 
     @Test
     void testRequestFrameSerialization() throws Exception {
-        RequestFrame frame = new RequestFrame("abc123", "chat.send", Map.of("message", "hello"));
+        RequestFrame frame = new RequestFrame("abc123", "chat.send", Collections.<String, Object>singletonMap("message", "hello"));
         String json = mapper.writeValueAsString(frame);
 
         assertTrue(json.contains("\"type\":\"req\""));
@@ -130,19 +131,17 @@ class OpenClawWsProtocolTest {
 
     @Test
     void testHelloOkDeserialization() throws Exception {
-        String json = """
-            {
-                "type": "hello-ok",
-                "protocol": 1,
-                "server": { "version": "2026.5.1", "connId": "conn-123" },
-                "features": {
-                    "methods": ["send", "chat.send", "chat.history", "agent"],
-                    "events": ["chat", "agent", "tick"]
-                },
-                "auth": { "role": "operator", "scopes": ["operator.admin"] },
-                "policy": { "maxPayload": 1048576, "maxBufferedBytes": 524288, "tickIntervalMs": 30000 }
-            }
-            """;
+        String json = "{"
+                + "\"type\":\"hello-ok\","
+                + "\"protocol\":1,"
+                + "\"server\":{\"version\":\"2026.5.1\",\"connId\":\"conn-123\"},"
+                + "\"features\":{"
+                + "\"methods\":[\"send\",\"chat.send\",\"chat.history\",\"agent\"],"
+                + "\"events\":[\"chat\",\"agent\",\"tick\"]"
+                + "},"
+                + "\"auth\":{\"role\":\"operator\",\"scopes\":[\"operator.admin\"]},"
+                + "\"policy\":{\"maxPayload\":1048576,\"maxBufferedBytes\":524288,\"tickIntervalMs\":30000}"
+                + "}";
         HelloOk hello = mapper.readValue(json, HelloOk.class);
         assertEquals(1, hello.getProtocol());
         assertEquals("2026.5.1", hello.getServer().getVersion());
