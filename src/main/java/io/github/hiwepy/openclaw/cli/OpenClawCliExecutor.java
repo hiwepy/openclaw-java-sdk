@@ -46,8 +46,8 @@ public class OpenClawCliExecutor {
 
         try {
             SubprocessExecutionSupport.RunSession session = executeSubprocess(execRequest);
-            String stdout = session.getStdout().toString(StandardCharsets.UTF_8);
-            String stderr = session.getStderr().toString(StandardCharsets.UTF_8);
+            String stdout = new String(session.getStdout().toByteArray(), StandardCharsets.UTF_8);
+            String stderr = new String(session.getStderr().toByteArray(), StandardCharsets.UTF_8);
 
             if (session.timedOut()) {
                 log.warn("openclaw timed out after {} ms: {}", timeoutMs, cmd);
