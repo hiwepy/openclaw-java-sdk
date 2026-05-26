@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.hiwepy.openclaw.OpenClawClientConfig;
 import io.github.hiwepy.openclaw.ws.protocol.*;
+import lombok.extern.slf4j.Slf4j;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import org.slf4j.Logger;
@@ -51,9 +52,9 @@ import java.util.concurrent.locks.ReentrantLock;
  * ws.close();
  * }</pre>
  */
+@Slf4j
 public class OpenClawGatewayWsClient extends WebSocketClient {
 
-    private static final Logger log = LoggerFactory.getLogger(OpenClawGatewayWsClient.class);
     private static final int PROTOCOL_VERSION = 1;
 
     private final OpenClawClientConfig config;
@@ -88,7 +89,7 @@ public class OpenClawGatewayWsClient extends WebSocketClient {
 
     private static URI buildWsUri(OpenClawClientConfig config) {
         String base = config.getGatewayBaseUrl();
-        if (base == null || base.isBlank()) {
+        if (base == null || base.trim().isEmpty()) {
             throw new IllegalArgumentException("gatewayBaseUrl is required for WebSocket connection");
         }
         String wsUrl = base
@@ -115,10 +116,18 @@ public class OpenClawGatewayWsClient extends WebSocketClient {
             String type = root.path("type").asText("");
 
             switch (type) {
-                case "res" -> handleResponse(root);
-                case "event" -> handleEvent(root);
-                case "req" -> log.debug("Received unexpected req frame from Gateway: {}", root);
-                default -> log.warn("Unknown frame type: {}", type);
+                case "res":
+                    handleResponse(root);
+                    break;
+                case "event":
+                    handleEvent(root);
+                    break;
+                case "req":
+                    log.debug("Received unexpected req frame from Gateway: {}", root);
+                    break;
+                default:
+                    log.warn("Unknown frame type: {}", type);
+                    break;
             }
         } catch (Exception e) {
             log.error("Failed to parse WebSocket message: {}", message, e);
@@ -130,13 +139,13 @@ public class OpenClawGatewayWsClient extends WebSocketClient {
         log.info("WebSocket closed: code={}, reason={}, remote={}", code, reason, remote);
         // 取消所有 pending RPC
         PendingRpc pending;
-        for (var entry : pendingRpcs.entrySet()) {
+        for (Map.Entry<String, PendingRpc> entry : pendingRpcs.entrySet()) {
             entry.getValue().future.completeExceptionally(
                     new RuntimeException("WebSocket closed: " + reason));
         }
         pendingRpcs.clear();
         // 清理 chat streams
-        for (var entry : activeChatStreams.entrySet()) {
+        for (Map.Entry<String, ChatStreamCollector> entry : activeChatStreams.entrySet()) {
             entry.getValue().handler.onError("WebSocket closed: " + reason);
         }
         activeChatStreams.clear();
@@ -158,9 +167,9 @@ public class OpenClawGatewayWsClient extends WebSocketClient {
         ConnectParams.AuthInfo auth = null;
         String token = config.getGatewayAuthToken();
         String password = config.getGatewayAuthPassword();
-        if (token != null && !token.isBlank()) {
+        if (token != null && !token.trim().isEmpty()) {
             auth = ConnectParams.AuthInfo.token(token);
-        } else if (password != null && !password.isBlank()) {
+        } else if (password != null && !password.trim().isEmpty()) {
             auth = ConnectParams.AuthInfo.password(password);
         }
 
@@ -326,7 +335,7 @@ public class OpenClawGatewayWsClient extends WebSocketClient {
      * 获取会话列表。
      */
     public ResponseFrame sessionsList() {
-        return rpc("sessions.list", Map.of());
+        return rpc("sessions.list", Collections.<String, Object>emptyMap());
     }
 
     /**
@@ -371,7 +380,7 @@ public class OpenClawGatewayWsClient extends WebSocketClient {
      * 列出 cron 任务。
      */
     public ResponseFrame cronList() {
-        return rpc("cron.list", Map.of());
+        return rpc("cron.list", Collections.<String, Object>emptyMap());
     }
 
     /**
