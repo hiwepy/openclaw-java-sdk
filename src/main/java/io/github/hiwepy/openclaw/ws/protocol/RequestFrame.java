@@ -2,12 +2,14 @@ package io.github.hiwepy.openclaw.ws.protocol;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
 
 import java.util.Map;
 
 /**
  * 客户端→Gateway RPC 请求帧：{@code { type: "req", id, method, params }}。
  */
+@Getter
 public class RequestFrame extends GatewayFrame {
 
     private final String id;
@@ -32,8 +34,4 @@ public class RequestFrame extends GatewayFrame {
         this.method = method;
         this.params = params;
     }
-
-    public String getId() { return id; }
-    public String getMethod() { return method; }
-    public Map<String, Object> getParams() { return params; }
 }

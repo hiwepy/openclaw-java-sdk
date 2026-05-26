@@ -2,6 +2,7 @@ package io.github.hiwepy.openclaw.ws.protocol;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -10,6 +11,7 @@ import java.util.Map;
  * Gateway WS {@code connect} 握手请求参数。
  * <p>与 {@code src/gateway/protocol/schema/frames.ts} 中 {@code ConnectParamsSchema} 对齐。</p>
  */
+@Getter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ConnectParams {
 
@@ -25,14 +27,10 @@ public class ConnectParams {
         this.auth = auth;
     }
 
-    public int getMinProtocol() { return minProtocol; }
-    public int getMaxProtocol() { return maxProtocol; }
-    public ClientInfo getClient() { return client; }
-    public AuthInfo getAuth() { return auth; }
-
     /**
      * 客户端身份信息。
      */
+    @Getter
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class ClientInfo {
         private final String id;
@@ -48,17 +46,12 @@ public class ConnectParams {
             this.platform = platform;
             this.mode = mode;
         }
-
-        public String getId() { return id; }
-        public String getDisplayName() { return displayName; }
-        public String getVersion() { return version; }
-        public String getPlatform() { return platform; }
-        public String getMode() { return mode; }
     }
 
     /**
      * 认证信息（token 或 password 二选一）。
      */
+    @Getter
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class AuthInfo {
         private final String token;
@@ -71,9 +64,6 @@ public class ConnectParams {
 
         public static AuthInfo token(String token) { return new AuthInfo(token, null); }
         public static AuthInfo password(String password) { return new AuthInfo(null, password); }
-
-        public String getToken() { return token; }
-        public String getPassword() { return password; }
     }
 
     /**

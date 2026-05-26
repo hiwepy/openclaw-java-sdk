@@ -2,10 +2,12 @@ package io.github.hiwepy.openclaw.ws.protocol;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
 
 /**
  * Gateway→客户端 RPC 响应帧：{@code { type: "res", id, ok, payload, error }}。
  */
+@Getter
 public class ResponseFrame extends GatewayFrame {
 
     private final String id;
@@ -26,9 +28,4 @@ public class ResponseFrame extends GatewayFrame {
         this.payload = payload;
         this.error = error;
     }
-
-    public String getId() { return id; }
-    public boolean isOk() { return ok; }
-    public Object getPayload() { return payload; }
-    public ErrorShape getError() { return error; }
 }

@@ -5,12 +5,11 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.hiwepy.openclaw.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import io.github.hiwepy.openclaw.ws.protocol.*;
 import lombok.extern.slf4j.Slf4j;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.*;
@@ -89,7 +88,7 @@ public class OpenClawGatewayWsClient extends WebSocketClient {
 
     private static URI buildWsUri(OpenClawClientConfig config) {
         String base = config.getGatewayBaseUrl();
-        if (base == null || base.trim().isEmpty()) {
+        if (OpenClawStrings.isBlank(base)) {
             throw new IllegalArgumentException("gatewayBaseUrl is required for WebSocket connection");
         }
         String wsUrl = base
@@ -167,9 +166,9 @@ public class OpenClawGatewayWsClient extends WebSocketClient {
         ConnectParams.AuthInfo auth = null;
         String token = config.getGatewayAuthToken();
         String password = config.getGatewayAuthPassword();
-        if (token != null && !token.trim().isEmpty()) {
+        if (OpenClawStrings.isNotBlank(token)) {
             auth = ConnectParams.AuthInfo.token(token);
-        } else if (password != null && !password.trim().isEmpty()) {
+        } else if (OpenClawStrings.isNotBlank(password)) {
             auth = ConnectParams.AuthInfo.password(password);
         }
 
