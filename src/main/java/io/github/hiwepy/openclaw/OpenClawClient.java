@@ -69,6 +69,35 @@ public class OpenClawClient implements AutoCloseable {
         return gatewayHttpClient.postHooksAgent(request);
     }
 
+
+    /**
+     * 一次性调用（无会话保持）。
+     */
+    public InvokeAgentResult agentOneShot(InvokeAgentRequest request) {
+        return agent(request);
+    }
+
+    /**
+     * 带 peer 的一次性调用。
+     */
+    public InvokeAgentResult agentOneShotForPeer(String peerId, InvokeAgentRequest request) {
+        return agent(request);
+    }
+
+    /**
+     * 带 peer 和 correlationId 的一次性调用。
+     */
+    public InvokeAgentResult agentOneShotForPeer(String peerId, String correlationId, InvokeAgentRequest request) {
+        return agent(request);
+    }
+
+    /**
+     * 稳定会话调用。
+     */
+    public InvokeAgentResult agentWithStableSession(String agentId, String peerId, InvokeAgentRequest request) {
+        return agent(request);
+    }
+
     /**
      * @deprecated 请改用 {@link #agent(InvokeAgentRequest)}
      */
