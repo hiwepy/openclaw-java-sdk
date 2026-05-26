@@ -18,7 +18,7 @@ Spring Boot 应用请使用 [openclaw-spring-boot-starter](../openclaw-spring-bo
 
 ### `POST /hooks/agent` 请求体（`InvokeAgentRequest`）
 
-与 [Cron Webhooks — POST /hooks/agent](https://docs.openclaw.ai/automation/cron-jobs#webhooks) 对齐：`message`（必填）、`name`、`agentId`、`wakeMode`、`deliver`、`channel`、`to`、`model`、`fallbacks`、`thinking`、`timeoutSeconds`、`sessionKey`。未显式设置的属性**不会**出现在 JSON 中（避免覆盖 Gateway 默认值）。`fallbacks: []` 表示严格模式；`sessionKey` 需网关 `hooks.allowRequestSessionKey` 等策略配合。
+与 [Gateway configuration-reference — Hooks](https://docs.openclaw.ai/gateway/configuration-reference) 对齐的可选字段：`sessionKey`、`deliver`、`channel`、`to`、`model`、`thinking`；未设置的属性**不会**出现在 JSON 中。`sessionKey` 需网关配置 `hooks.allowRequestSessionKey` 等策略，否则可能被拒绝。
 
 ### Hook `sessionKey` 约定（`OpenClawSessionKeys` / `OpenClawClient`）
 
@@ -44,18 +44,6 @@ client.agentWithStableSession("xiaohongshu-data-assistant", userId, request);
 Gateway 建议：`hooks.allowRequestSessionKey: true`，`hooks.allowedSessionKeyPrefixes: ["hook:"]`。
 
 OpenClaw 官方外部 [App SDK](https://docs.openclaw.ai/) 以 **WebSocket** 连 Gateway（`connect`、流式事件、`agent.wait` 等）。本 Java 库现阶段提供 **Webhook HTTP** + **本地 `openclaw` CLI**；若需与 TS `@openclaw/sdk` 对等的 WS 能力，需另行集成或等待本仓库扩展。
-
-## 启动就绪探测（无 Spring）
-
-```java
-OpenClawCliAvailabilityChecker checker = new OpenClawCliAvailabilityChecker();
-OpenClawCliAvailabilityReport report = checker.check(config);
-if (!report.isAvailable()) {
-    throw new IllegalStateException(report.toDiagnosticMessage());
-}
-```
-
-使用 `OpenClawClientConfig#getLocalProbeTimeoutSeconds()` 作为 `openclaw --version` 探测超时。Spring Boot 见 [openclaw-spring-boot-starter](../openclaw-spring-boot-starter)。
 
 ## CLI 封装与文档映射
 

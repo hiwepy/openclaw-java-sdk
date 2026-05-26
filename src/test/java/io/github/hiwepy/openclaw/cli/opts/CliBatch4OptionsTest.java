@@ -1,5 +1,6 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -14,10 +15,10 @@ class CliBatch4OptionsTest {
     @Test
     void browser_profile_and_lifecycle() {
         assertEquals(
-                List.of("--browser-profile", "openclaw", "start"),
+                OpenClawLists.of("--browser-profile", "openclaw", "start"),
                 BrowserOptions.builder().browserProfile("openclaw").start().build().toSubcommandArguments());
         assertEquals(
-                List.of("--url", "wss://g:1", "--timeout", "5000", "--json", "profiles"),
+                OpenClawLists.of("--url", "wss://g:1", "--timeout", "5000", "--json", "profiles"),
                 BrowserOptions.builder()
                         .gatewayUrl("wss://g:1")
                         .timeoutMs(5000)
@@ -30,8 +31,7 @@ class CliBatch4OptionsTest {
     @Test
     void mcp_serve_and_registry() {
         assertEquals(
-                List.of(
-                        "serve",
+                OpenClawLists.of("serve",
                         "--url",
                         "wss://h:18789",
                         "--token-file",
@@ -48,17 +48,17 @@ class CliBatch4OptionsTest {
                         .build()
                         .toSubcommandArguments());
         assertEquals(
-                List.of("set", "ctx", "{\"command\":\"uvx\"}"),
+                OpenClawLists.of("set", "ctx", "{\"command\":\"uvx\"}"),
                 McpOptions.builder().set("ctx", "{\"command\":\"uvx\"}").build().toSubcommandArguments());
     }
 
     @Test
     void plugins_list_and_install() {
         assertEquals(
-                List.of("list", "--enabled", "--json"),
+                OpenClawLists.of("list", "--enabled", "--json"),
                 PluginsOptions.builder().list().listEnabled(true).listJson(true).build().toSubcommandArguments());
         assertEquals(
-                List.of("install", "-l", "./p", "--force"),
+                OpenClawLists.of("install", "-l", "./p", "--force"),
                 PluginsOptions.builder().install("./p").installLink(true).installForce(true).build().toSubcommandArguments());
     }
 }

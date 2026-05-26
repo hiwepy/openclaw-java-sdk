@@ -1,5 +1,6 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
 import io.github.hiwepy.openclaw.cli.args.CliSubArgs;
 
 import java.util.ArrayList;
@@ -26,7 +27,7 @@ public final class GatewayCommandOptions implements CliSubArgs {
      * @param segments 非 null，将拷贝为不可变列表
      */
     private GatewayCommandOptions(List<String> segments) {
-        this.segments = List.copyOf(segments);
+        this.segments = OpenClawLists.copyOf(segments);
     }
 
     /**
@@ -40,7 +41,7 @@ public final class GatewayCommandOptions implements CliSubArgs {
      * 无子命令 token：对应裸 {@code openclaw gateway}（由 CLI 决定是否等价于前台启动行为，见文档 Run the Gateway 节）。
      */
     public static GatewayCommandOptions empty() {
-        return new GatewayCommandOptions(List.of());
+        return new GatewayCommandOptions(OpenClawLists.empty());
     }
 
     /**
@@ -114,7 +115,7 @@ public final class GatewayCommandOptions implements CliSubArgs {
          * @return 不可变 {@link GatewayCommandOptions}
          */
         public GatewayCommandOptions build() {
-            return new GatewayCommandOptions(List.copyOf(s));
+            return new GatewayCommandOptions(OpenClawLists.copyOf(s));
         }
     }
 }

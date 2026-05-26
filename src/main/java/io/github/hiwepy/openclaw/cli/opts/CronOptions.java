@@ -1,5 +1,7 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
+import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import io.github.hiwepy.openclaw.cli.args.CliSubArgs;
 
 import java.util.ArrayList;
@@ -150,7 +152,7 @@ public final class CronOptions implements CliSubArgs {
         this.clearAgent = b.clearAgent;
         this.bestEffortDeliver = b.bestEffortDeliver;
         this.noBestEffortDeliver = b.noBestEffortDeliver;
-        this.extra = b.extra == null ? List.of() : List.copyOf(b.extra);
+        this.extra = b.extra == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.extra);
     }
 
     /**
@@ -169,7 +171,7 @@ public final class CronOptions implements CliSubArgs {
         switch (verb) {
             case RUN:
                 out.add("run");
-                if (jobId != null && !jobId.isBlank()) {
+                if (jobId != null && OpenClawStrings.isNotBlank(jobId)) {
                     out.add(jobId.trim());
                 }
                 OpenClawCliArgv.addFlag(out, "--due", runDue);
@@ -185,7 +187,7 @@ public final class CronOptions implements CliSubArgs {
                 break;
             case EDIT:
                 out.add("edit");
-                if (jobId != null && !jobId.isBlank()) {
+                if (jobId != null && OpenClawStrings.isNotBlank(jobId)) {
                     out.add(jobId.trim());
                 }
                 appendAddEditFlags(out, true);
@@ -195,7 +197,7 @@ public final class CronOptions implements CliSubArgs {
                 break;
             case DELETE:
                 out.add("delete");
-                if (jobId != null && !jobId.isBlank()) {
+                if (jobId != null && OpenClawStrings.isNotBlank(jobId)) {
                     out.add(jobId.trim());
                 }
                 break;

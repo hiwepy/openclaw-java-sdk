@@ -225,7 +225,6 @@ public class OpenClawClient implements AutoCloseable {
         copy.setTo(source.getTo());
         copy.setModel(source.getModel());
         copy.setThinking(source.getThinking());
-        copy.setFallbacks(source.getFallbacks());
         return copy;
     }
 }

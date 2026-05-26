@@ -1,5 +1,7 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
+import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import io.github.hiwepy.openclaw.cli.args.CliSubArgs;
 
 import java.util.ArrayList;
@@ -117,7 +119,7 @@ public final class NodesOptions implements CliSubArgs {
         this.password = b.password;
         this.timeout = b.timeout;
         this.json = b.json;
-        this.extra = b.extra == null ? List.of() : List.copyOf(b.extra);
+        this.extra = b.extra == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.extra);
     }
 
     /**
@@ -144,13 +146,13 @@ public final class NodesOptions implements CliSubArgs {
                 break;
             case APPROVE:
                 out.add("approve");
-                if (requestId != null && !requestId.isBlank()) {
+                if (requestId != null && OpenClawStrings.isNotBlank(requestId)) {
                     out.add(requestId.trim());
                 }
                 break;
             case REJECT:
                 out.add("reject");
-                if (requestId != null && !requestId.isBlank()) {
+                if (requestId != null && OpenClawStrings.isNotBlank(requestId)) {
                     out.add(requestId.trim());
                 }
                 break;

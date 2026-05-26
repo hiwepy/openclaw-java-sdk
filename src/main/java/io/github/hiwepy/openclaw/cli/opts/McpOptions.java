@@ -1,5 +1,7 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
+import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import io.github.hiwepy.openclaw.cli.args.CliSubArgs;
 
 import java.util.ArrayList;
@@ -124,7 +126,7 @@ public final class McpOptions implements CliSubArgs {
         this.setName = b.setName;
         this.setJson = b.setJson;
         this.unsetName = b.unsetName;
-        this.extra = b.extra == null ? List.of() : List.copyOf(b.extra);
+        this.extra = b.extra == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.extra);
     }
 
     /**
@@ -159,23 +161,23 @@ public final class McpOptions implements CliSubArgs {
                 break;
             case SHOW:
                 out.add("show");
-                if (showName != null && !showName.isBlank()) {
+                if (showName != null && OpenClawStrings.isNotBlank(showName)) {
                     out.add(showName.trim());
                 }
                 OpenClawCliArgv.addFlag(out, "--json", showJson);
                 break;
             case SET:
                 out.add("set");
-                if (setName != null && !setName.isBlank()) {
+                if (setName != null && OpenClawStrings.isNotBlank(setName)) {
                     out.add(setName.trim());
                 }
-                if (setJson != null && !setJson.isBlank()) {
+                if (setJson != null && OpenClawStrings.isNotBlank(setJson)) {
                     out.add(setJson);
                 }
                 break;
             case UNSET:
                 out.add("unset");
-                if (unsetName != null && !unsetName.isBlank()) {
+                if (unsetName != null && OpenClawStrings.isNotBlank(unsetName)) {
                     out.add(unsetName.trim());
                 }
                 break;

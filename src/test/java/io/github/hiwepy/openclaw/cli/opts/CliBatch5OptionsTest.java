@@ -1,5 +1,6 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -14,11 +15,10 @@ class CliBatch5OptionsTest {
     @Test
     void cron_run_and_add() {
         assertEquals(
-                List.of("run", "job-1", "--due"),
+                OpenClawLists.of("run", "job-1", "--due"),
                 CronOptions.builder().run("job-1").runDue(true).build().toSubcommandArguments());
         assertEquals(
-                List.of(
-                        "add",
+                OpenClawLists.of("add",
                         "--name",
                         "Morning",
                         "--cron",
@@ -44,20 +44,20 @@ class CliBatch5OptionsTest {
     @Test
     void hooks_list_and_enable() {
         assertEquals(
-                List.of("list", "--json"),
+                OpenClawLists.of("list", "--json"),
                 HooksOptions.builder().list().listJson(true).build().toSubcommandArguments());
-        assertEquals(List.of("enable", "session-memory"), HooksOptions.builder().enable("session-memory").build().toSubcommandArguments());
+        assertEquals(OpenClawLists.of("enable", "session-memory"), HooksOptions.builder().enable("session-memory").build().toSubcommandArguments());
     }
 
     @Test
     void webhooks_gmail_setup() {
         assertEquals(
-                List.of("gmail", "setup", "--account", "a@b.com", "--json"),
+                OpenClawLists.of("gmail", "setup", "--account", "a@b.com", "--json"),
                 WebhooksOptions.builder().gmailSetup("a@b.com").json(true).build().toSubcommandArguments());
     }
 
     @Test
     void flows_list() {
-        assertEquals(List.of("flow", "list", "--json"), FlowsOptions.builder().list().listJson(true).build().toSubcommandArguments());
+        assertEquals(OpenClawLists.of("flow", "list", "--json"), FlowsOptions.builder().list().listJson(true).build().toSubcommandArguments());
     }
 }

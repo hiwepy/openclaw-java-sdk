@@ -1,5 +1,7 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
+import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import io.github.hiwepy.openclaw.cli.args.CliSubArgs;
 
 import java.util.ArrayList;
@@ -102,11 +104,11 @@ public final class ChannelsOptions implements CliSubArgs {
         this.account = b.account;
         this.target = b.target;
         this.kind = b.kind;
-        this.resolvePositional = b.resolvePositional == null ? List.of() : List.copyOf(b.resolvePositional);
+        this.resolvePositional = b.resolvePositional == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.resolvePositional);
         this.logLines = b.logLines;
         this.removeDelete = b.removeDelete;
         this.loginVerbose = b.loginVerbose;
-        this.extra = b.extra == null ? List.of() : List.copyOf(b.extra);
+        this.extra = b.extra == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.extra);
     }
 
     /**
@@ -239,7 +241,7 @@ public final class ChannelsOptions implements CliSubArgs {
             this.resolvePositional = new ArrayList<>();
             if (positionalNames != null) {
                 for (String p : positionalNames) {
-                    if (p != null && !p.isBlank()) {
+                    if (p != null && OpenClawStrings.isNotBlank(p)) {
                         resolvePositional.add(p.trim());
                     }
                 }

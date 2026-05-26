@@ -1,5 +1,6 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -13,12 +14,12 @@ class CliBatch1OptionsTest {
 
     @Test
     void agents_defaultList_and_explicitList() {
-        assertEquals(List.of(), AgentsOptions.builder().defaultList().build().toSubcommandArguments());
+        assertEquals(OpenClawLists.empty(), AgentsOptions.builder().defaultList().build().toSubcommandArguments());
         assertEquals(
-                List.of("list", "--json"),
+                OpenClawLists.of("list", "--json"),
                 AgentsOptions.builder().list().listJson(true).build().toSubcommandArguments());
         assertEquals(
-                List.of("add", "work", "--workspace", "/ws", "--non-interactive"),
+                OpenClawLists.of("add", "work", "--workspace", "/ws", "--non-interactive"),
                 AgentsOptions.builder()
                         .add("work")
                         .workspace("/ws")
@@ -26,7 +27,7 @@ class CliBatch1OptionsTest {
                         .build()
                         .toSubcommandArguments());
         assertEquals(
-                List.of("bind", "--agent", "work", "--bind", "telegram:ops"),
+                OpenClawLists.of("bind", "--agent", "work", "--bind", "telegram:ops"),
                 AgentsOptions.builder()
                         .bindCommand()
                         .bindAgent("work")
@@ -38,10 +39,10 @@ class CliBatch1OptionsTest {
     @Test
     void sessions_list_and_cleanup() {
         assertEquals(
-                List.of("--agent", "work", "--json"),
+                OpenClawLists.of("--agent", "work", "--json"),
                 SessionsOptions.builder().agent("work").json(true).build().toSubcommandArguments());
         assertEquals(
-                List.of("cleanup", "--dry-run", "--all-agents", "--json"),
+                OpenClawLists.of("cleanup", "--dry-run", "--all-agents", "--json"),
                 SessionsOptions.builder()
                         .cleanup()
                         .cleanupDryRun(true)
@@ -54,7 +55,7 @@ class CliBatch1OptionsTest {
     @Test
     void skills_search_install_list() {
         assertEquals(
-                List.of("search", "calendar", "--limit", "20", "--json"),
+                OpenClawLists.of("search", "calendar", "--limit", "20", "--json"),
                 SkillsOptions.builder()
                         .search("calendar")
                         .searchLimit(20)
@@ -62,7 +63,7 @@ class CliBatch1OptionsTest {
                         .build()
                         .toSubcommandArguments());
         assertEquals(
-                List.of("install", "my-skill", "--version", "1.0.0", "--force"),
+                OpenClawLists.of("install", "my-skill", "--version", "1.0.0", "--force"),
                 SkillsOptions.builder()
                         .install("my-skill")
                         .installVersion("1.0.0")
@@ -70,14 +71,14 @@ class CliBatch1OptionsTest {
                         .build()
                         .toSubcommandArguments());
         assertEquals(
-                List.of("--json", "--verbose"),
+                OpenClawLists.of("--json", "--verbose"),
                 SkillsOptions.builder().defaultList().listJson(true).listVerbose(true).build().toSubcommandArguments());
     }
 
     @Test
     void memory_status_and_search() {
         assertEquals(
-                List.of("status", "--agent", "main", "--deep", "--json"),
+                OpenClawLists.of("status", "--agent", "main", "--deep", "--json"),
                 MemoryOptions.builder()
                         .status()
                         .agent("main")
@@ -86,7 +87,7 @@ class CliBatch1OptionsTest {
                         .build()
                         .toSubcommandArguments());
         assertEquals(
-                List.of("search", "--query", "deployment", "--max-results", "20", "--json"),
+                OpenClawLists.of("search", "--query", "deployment", "--max-results", "20", "--json"),
                 MemoryOptions.builder()
                         .search()
                         .searchQuery("deployment")

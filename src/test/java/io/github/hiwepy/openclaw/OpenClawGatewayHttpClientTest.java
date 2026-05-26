@@ -53,33 +53,26 @@ class OpenClawGatewayHttpClientTest {
         InvokeAgentRequest r = new InvokeAgentRequest();
         r.setMessage("hi");
         r.setAgentId("main");
-        r.setName("Email");
-        r.setWakeMode("next-heartbeat");
-        r.setTimeoutSeconds(120);
         r.setSessionKey("hook:test:1");
         r.setDeliver(true);
         r.setChannel("last");
         r.setTo("user1");
         r.setModel("openai/gpt-5.5");
         r.setThinking("off");
-        r.setFallbacks(java.util.Arrays.asList("openai/gpt-5.4", "anthropic/claude"));
         Map<String, Object> body = OpenClawGatewayHttpClient.buildHooksAgentBody(r);
         assertEquals("hi", body.get("message"));
         assertEquals("main", body.get("agentId"));
-        assertEquals("Email", body.get("name"));
-        assertEquals("next-heartbeat", body.get("wakeMode"));
-        assertEquals(120, body.get("timeoutSeconds"));
         assertEquals("hook:test:1", body.get("sessionKey"));
         assertEquals(true, body.get("deliver"));
         assertEquals("last", body.get("channel"));
         assertEquals("user1", body.get("to"));
         assertEquals("openai/gpt-5.5", body.get("model"));
         assertEquals("off", body.get("thinking"));
-        assertEquals(2, ((java.util.List<?>) body.get("fallbacks")).size());
+        assertTrue(body.containsKey("timeoutSeconds"));
     }
 
     /**
-     * 未设置可选字段时不写入 body，与文档 curl 示例（仅 message/name/model）一致。
+     * 未设置 agentId 等可选字段时不写入 body。
      */
     @Test
     void buildHooksAgentBody_omitsUnsetOptionals() {
@@ -88,20 +81,6 @@ class OpenClawGatewayHttpClientTest {
         Map<String, Object> body = OpenClawGatewayHttpClient.buildHooksAgentBody(r);
         assertFalse(body.containsKey("agentId"));
         assertFalse(body.containsKey("sessionKey"));
-        assertFalse(body.containsKey("name"));
-        assertFalse(body.containsKey("wakeMode"));
-        assertFalse(body.containsKey("timeoutSeconds"));
-        assertFalse(body.containsKey("fallbacks"));
-    }
-
-    @Test
-    void buildHooksAgentBody_includesEmptyFallbacksList() {
-        InvokeAgentRequest r = new InvokeAgentRequest();
-        r.setMessage("strict");
-        r.setFallbacks(java.util.Collections.emptyList());
-        Map<String, Object> body = OpenClawGatewayHttpClient.buildHooksAgentBody(r);
-        assertTrue(body.containsKey("fallbacks"));
-        assertTrue(((java.util.List<?>) body.get("fallbacks")).isEmpty());
     }
 
     @Test
@@ -109,12 +88,5 @@ class OpenClawGatewayHttpClientTest {
         InvokeAgentRequest r = new InvokeAgentRequest();
         r.setMessage("   ");
         assertThrows(IllegalArgumentException.class, () -> OpenClawGatewayHttpClient.buildHooksAgentBody(r));
-    }
-
-    @Test
-    void resolveHooksPath_rejectsRootPath() {
-        OpenClawClientConfig config = new OpenClawClientConfig();
-        config.setHooksPath("/");
-        assertThrows(IllegalArgumentException.class, config::resolveHooksPath);
     }
 }

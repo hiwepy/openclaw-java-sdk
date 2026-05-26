@@ -1,6 +1,7 @@
 package io.github.hiwepy.openclaw.cli;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Objects;
 
@@ -8,6 +9,7 @@ import java.util.Objects;
  * {@code openclaw} 进程执行结果（不解析业务语义；{@code --json} 输出在 {@link #stdout}）。
  */
 @Getter
+@Slf4j
 public final class OpenClawCliResult {
 
     private final int exitCode;
@@ -16,8 +18,8 @@ public final class OpenClawCliResult {
 
     public OpenClawCliResult(int exitCode, String stdout, String stderr) {
         this.exitCode = exitCode;
-        this.stdout = Objects.requireNonNullElse(stdout, "");
-        this.stderr = Objects.requireNonNullElse(stderr, "");
+        this.stdout = stdout != null ? stdout : "";
+        this.stderr = stderr != null ? stderr : "";
     }
 
     /**

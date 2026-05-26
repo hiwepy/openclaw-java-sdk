@@ -1,5 +1,7 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
+import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import io.github.hiwepy.openclaw.cli.args.CliSubArgs;
 
 import java.util.ArrayList;
@@ -104,7 +106,7 @@ public final class SkillsOptions implements CliSubArgs {
      */
     private SkillsOptions(Builder b) {
         this.verb = b.verb;
-        this.searchWords = b.searchWords == null ? List.of() : List.copyOf(b.searchWords);
+        this.searchWords = b.searchWords == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.searchWords);
         this.searchLimit = b.searchLimit;
         this.searchJson = b.searchJson;
         this.installSlug = b.installSlug;
@@ -118,7 +120,7 @@ public final class SkillsOptions implements CliSubArgs {
         this.infoName = b.infoName;
         this.infoJson = b.infoJson;
         this.checkJson = b.checkJson;
-        this.extra = b.extra == null ? List.of() : List.copyOf(b.extra);
+        this.extra = b.extra == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.extra);
     }
 
     /**
@@ -145,7 +147,7 @@ public final class SkillsOptions implements CliSubArgs {
                 break;
             case INSTALL:
                 out.add("install");
-                if (installSlug != null && !installSlug.isBlank()) {
+                if (installSlug != null && OpenClawStrings.isNotBlank(installSlug)) {
                     out.add(installSlug.trim());
                 }
                 OpenClawCliArgv.addIfPresent(out, "--version", installVersion);
@@ -155,7 +157,7 @@ public final class SkillsOptions implements CliSubArgs {
                 out.add("update");
                 if (updateAll) {
                     out.add("--all");
-                } else if (updateSlug != null && !updateSlug.isBlank()) {
+                } else if (updateSlug != null && OpenClawStrings.isNotBlank(updateSlug)) {
                     out.add(updateSlug.trim());
                 }
                 break;
@@ -167,7 +169,7 @@ public final class SkillsOptions implements CliSubArgs {
                 break;
             case INFO:
                 out.add("info");
-                if (infoName != null && !infoName.isBlank()) {
+                if (infoName != null && OpenClawStrings.isNotBlank(infoName)) {
                     out.add(infoName.trim());
                 }
                 OpenClawCliArgv.addFlag(out, "--json", infoJson);
@@ -228,7 +230,7 @@ public final class SkillsOptions implements CliSubArgs {
             this.searchWords = new ArrayList<>();
             if (queryWords != null) {
                 for (String w : queryWords) {
-                    if (w != null && !w.isBlank()) {
+                    if (w != null && OpenClawStrings.isNotBlank(w)) {
                         searchWords.add(w.trim());
                     }
                 }

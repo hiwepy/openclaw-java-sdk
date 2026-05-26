@@ -1,5 +1,7 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
+import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import io.github.hiwepy.openclaw.cli.args.CliSubArgs;
 
 import java.util.ArrayList;
@@ -152,7 +154,7 @@ public final class PluginsOptions implements CliSubArgs {
         this.yes = b.yes;
         this.marketplaceSource = b.marketplaceSource;
         this.marketplaceJson = b.marketplaceJson;
-        this.extra = b.extra == null ? List.of() : List.copyOf(b.extra);
+        this.extra = b.extra == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.extra);
     }
 
     /**
@@ -178,7 +180,7 @@ public final class PluginsOptions implements CliSubArgs {
             case INSTALL:
                 out.add("install");
                 OpenClawCliArgv.addFlag(out, "-l", installLink);
-                if (installSpec != null && !installSpec.isBlank()) {
+                if (installSpec != null && OpenClawStrings.isNotBlank(installSpec)) {
                     out.add(installSpec.trim());
                 }
                 OpenClawCliArgv.addFlag(out, "--force", installForce);
@@ -191,26 +193,26 @@ public final class PluginsOptions implements CliSubArgs {
                 out.add(mode == Mode.INFO ? "info" : "inspect");
                 if (inspectAll) {
                     out.add("--all");
-                } else if (inspectId != null && !inspectId.isBlank()) {
+                } else if (inspectId != null && OpenClawStrings.isNotBlank(inspectId)) {
                     out.add(inspectId.trim());
                 }
                 OpenClawCliArgv.addFlag(out, "--json", inspectJson);
                 break;
             case ENABLE:
                 out.add("enable");
-                if (pluginId != null && !pluginId.isBlank()) {
+                if (pluginId != null && OpenClawStrings.isNotBlank(pluginId)) {
                     out.add(pluginId.trim());
                 }
                 break;
             case DISABLE:
                 out.add("disable");
-                if (pluginId != null && !pluginId.isBlank()) {
+                if (pluginId != null && OpenClawStrings.isNotBlank(pluginId)) {
                     out.add(pluginId.trim());
                 }
                 break;
             case UNINSTALL:
                 out.add("uninstall");
-                if (pluginId != null && !pluginId.isBlank()) {
+                if (pluginId != null && OpenClawStrings.isNotBlank(pluginId)) {
                     out.add(pluginId.trim());
                 }
                 OpenClawCliArgv.addFlag(out, "--dry-run", uninstallDryRun);
@@ -223,7 +225,7 @@ public final class PluginsOptions implements CliSubArgs {
                 out.add("update");
                 if (updateAll) {
                     out.add("--all");
-                } else if (pluginId != null && !pluginId.isBlank()) {
+                } else if (pluginId != null && OpenClawStrings.isNotBlank(pluginId)) {
                     out.add(pluginId.trim());
                 }
                 OpenClawCliArgv.addFlag(out, "--dry-run", updateDryRun);
@@ -233,7 +235,7 @@ public final class PluginsOptions implements CliSubArgs {
             case MARKETPLACE_LIST:
                 out.add("marketplace");
                 out.add("list");
-                if (marketplaceSource != null && !marketplaceSource.isBlank()) {
+                if (marketplaceSource != null && OpenClawStrings.isNotBlank(marketplaceSource)) {
                     out.add(marketplaceSource.trim());
                 }
                 OpenClawCliArgv.addFlag(out, "--json", marketplaceJson);

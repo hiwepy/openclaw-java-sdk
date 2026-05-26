@@ -1,5 +1,7 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
+import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import io.github.hiwepy.openclaw.cli.args.CliSubArgs;
 
 import java.util.ArrayList;
@@ -476,7 +478,7 @@ public final class BrowserOptions implements CliSubArgs {
         this.text = b.text;
         this.key = b.key;
         this.refEnd = b.refEnd;
-        this.selectValues = b.selectValues == null ? List.of() : List.copyOf(b.selectValues);
+        this.selectValues = b.selectValues == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.selectValues);
         this.fieldsJson = b.fieldsJson;
         this.waitText = b.waitText;
         this.evaluateFn = b.evaluateFn;
@@ -508,7 +510,7 @@ public final class BrowserOptions implements CliSubArgs {
         this.traceOutZip = b.traceOutZip;
         this.screenshotFullPage = b.screenshotFullPage;
         this.screenshotRef = b.screenshotRef;
-        this.extra = b.extra == null ? List.of() : List.copyOf(b.extra);
+        this.extra = b.extra == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.extra);
     }
 
     /**
@@ -584,19 +586,19 @@ public final class BrowserOptions implements CliSubArgs {
                 break;
             case OPEN:
                 out.add("open");
-                if (openUrl != null && !openUrl.isBlank()) {
+                if (openUrl != null && OpenClawStrings.isNotBlank(openUrl)) {
                     out.add(openUrl.trim());
                 }
                 break;
             case FOCUS:
                 out.add("focus");
-                if (targetId != null && !targetId.isBlank()) {
+                if (targetId != null && OpenClawStrings.isNotBlank(targetId)) {
                     out.add(targetId.trim());
                 }
                 break;
             case CLOSE:
                 out.add("close");
-                if (targetId != null && !targetId.isBlank()) {
+                if (targetId != null && OpenClawStrings.isNotBlank(targetId)) {
                     out.add(targetId.trim());
                 }
                 break;
@@ -610,19 +612,19 @@ public final class BrowserOptions implements CliSubArgs {
                 break;
             case NAVIGATE:
                 out.add("navigate");
-                if (openUrl != null && !openUrl.isBlank()) {
+                if (openUrl != null && OpenClawStrings.isNotBlank(openUrl)) {
                     out.add(openUrl.trim());
                 }
                 break;
             case CLICK:
                 out.add("click");
-                if (ref != null && !ref.isBlank()) {
+                if (ref != null && OpenClawStrings.isNotBlank(ref)) {
                     out.add(ref.trim());
                 }
                 break;
             case TYPE:
                 out.add("type");
-                if (ref != null && !ref.isBlank()) {
+                if (ref != null && OpenClawStrings.isNotBlank(ref)) {
                     out.add(ref.trim());
                 }
                 if (text != null) {
@@ -631,38 +633,38 @@ public final class BrowserOptions implements CliSubArgs {
                 break;
             case PRESS:
                 out.add("press");
-                if (key != null && !key.isBlank()) {
+                if (key != null && OpenClawStrings.isNotBlank(key)) {
                     out.add(key.trim());
                 }
                 break;
             case HOVER:
                 out.add("hover");
-                if (ref != null && !ref.isBlank()) {
+                if (ref != null && OpenClawStrings.isNotBlank(ref)) {
                     out.add(ref.trim());
                 }
                 break;
             case SCROLL_INTO_VIEW:
                 out.add("scrollintoview");
-                if (ref != null && !ref.isBlank()) {
+                if (ref != null && OpenClawStrings.isNotBlank(ref)) {
                     out.add(ref.trim());
                 }
                 break;
             case DRAG:
                 out.add("drag");
-                if (ref != null && !ref.isBlank()) {
+                if (ref != null && OpenClawStrings.isNotBlank(ref)) {
                     out.add(ref.trim());
                 }
-                if (refEnd != null && !refEnd.isBlank()) {
+                if (refEnd != null && OpenClawStrings.isNotBlank(refEnd)) {
                     out.add(refEnd.trim());
                 }
                 break;
             case SELECT:
                 out.add("select");
-                if (ref != null && !ref.isBlank()) {
+                if (ref != null && OpenClawStrings.isNotBlank(ref)) {
                     out.add(ref.trim());
                 }
                 for (String v : selectValues) {
-                    if (v != null && !v.isBlank()) {
+                    if (v != null && OpenClawStrings.isNotBlank(v)) {
                         out.add(v.trim());
                     }
                 }
@@ -682,7 +684,7 @@ public final class BrowserOptions implements CliSubArgs {
                 break;
             case UPLOAD:
                 out.add("upload");
-                if (uploadPath != null && !uploadPath.isBlank()) {
+                if (uploadPath != null && OpenClawStrings.isNotBlank(uploadPath)) {
                     out.add(uploadPath.trim());
                 }
                 OpenClawCliArgv.addIfPresent(out, "--ref", ref);
@@ -692,10 +694,10 @@ public final class BrowserOptions implements CliSubArgs {
                 break;
             case DOWNLOAD:
                 out.add("download");
-                if (ref != null && !ref.isBlank()) {
+                if (ref != null && OpenClawStrings.isNotBlank(ref)) {
                     out.add(ref.trim());
                 }
-                if (downloadFilename != null && !downloadFilename.isBlank()) {
+                if (downloadFilename != null && OpenClawStrings.isNotBlank(downloadFilename)) {
                     out.add(downloadFilename.trim());
                 }
                 break;
@@ -721,28 +723,28 @@ public final class BrowserOptions implements CliSubArgs {
             case SET_OFFLINE:
                 out.add("set");
                 out.add("offline");
-                if (offlineState != null && !offlineState.isBlank()) {
+                if (offlineState != null && OpenClawStrings.isNotBlank(offlineState)) {
                     out.add(offlineState.trim());
                 }
                 break;
             case SET_MEDIA:
                 out.add("set");
                 out.add("media");
-                if (media != null && !media.isBlank()) {
+                if (media != null && OpenClawStrings.isNotBlank(media)) {
                     out.add(media.trim());
                 }
                 break;
             case SET_TIMEZONE:
                 out.add("set");
                 out.add("timezone");
-                if (timezone != null && !timezone.isBlank()) {
+                if (timezone != null && OpenClawStrings.isNotBlank(timezone)) {
                     out.add(timezone.trim());
                 }
                 break;
             case SET_LOCALE:
                 out.add("set");
                 out.add("locale");
-                if (locale != null && !locale.isBlank()) {
+                if (locale != null && OpenClawStrings.isNotBlank(locale)) {
                     out.add(locale.trim());
                 }
                 break;
@@ -758,21 +760,21 @@ public final class BrowserOptions implements CliSubArgs {
             case SET_DEVICE:
                 out.add("set");
                 out.add("device");
-                if (deviceName != null && !deviceName.isBlank()) {
+                if (deviceName != null && OpenClawStrings.isNotBlank(deviceName)) {
                     out.add(deviceName.trim());
                 }
                 break;
             case SET_HEADERS:
                 out.add("set");
                 out.add("headers");
-                if (headersJson != null && !headersJson.isBlank()) {
+                if (headersJson != null && OpenClawStrings.isNotBlank(headersJson)) {
                     out.add(headersJson.trim());
                 }
                 break;
             case SET_CREDENTIALS:
                 out.add("set");
                 out.add("credentials");
-                if (credUser != null && !credUser.isBlank()) {
+                if (credUser != null && OpenClawStrings.isNotBlank(credUser)) {
                     out.add(credUser.trim());
                 }
                 if (credPass != null) {
@@ -785,10 +787,10 @@ public final class BrowserOptions implements CliSubArgs {
             case COOKIES_SET:
                 out.add("cookies");
                 out.add("set");
-                if (cookieName != null && !cookieName.isBlank()) {
+                if (cookieName != null && OpenClawStrings.isNotBlank(cookieName)) {
                     out.add(cookieName.trim());
                 }
-                if (cookieValue != null && !cookieValue.isBlank()) {
+                if (cookieValue != null && OpenClawStrings.isNotBlank(cookieValue)) {
                     out.add(cookieValue.trim());
                 }
                 OpenClawCliArgv.addIfPresent(out, "--url", cookieUrl);
@@ -806,10 +808,10 @@ public final class BrowserOptions implements CliSubArgs {
                 out.add("storage");
                 out.add("local");
                 out.add("set");
-                if (storageKey != null && !storageKey.isBlank()) {
+                if (storageKey != null && OpenClawStrings.isNotBlank(storageKey)) {
                     out.add(storageKey.trim());
                 }
-                if (storageValue != null && !storageValue.isBlank()) {
+                if (storageValue != null && OpenClawStrings.isNotBlank(storageValue)) {
                     out.add(storageValue.trim());
                 }
                 break;
@@ -827,13 +829,13 @@ public final class BrowserOptions implements CliSubArgs {
                 break;
             case RESPONSE_BODY:
                 out.add("responsebody");
-                if (responsePattern != null && !responsePattern.isBlank()) {
+                if (responsePattern != null && OpenClawStrings.isNotBlank(responsePattern)) {
                     out.add(responsePattern.trim());
                 }
                 break;
             case HIGHLIGHT:
                 out.add("highlight");
-                if (ref != null && !ref.isBlank()) {
+                if (ref != null && OpenClawStrings.isNotBlank(ref)) {
                     out.add(ref.trim());
                 }
                 break;
