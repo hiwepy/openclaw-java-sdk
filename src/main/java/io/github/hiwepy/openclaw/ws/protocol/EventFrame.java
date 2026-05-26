@@ -1,0 +1,30 @@
+package io.github.hiwepy.openclaw.ws.protocol;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+/**
+ * Gateway→客户端推送事件帧：{@code { type: "event", event, payload, seq }}。
+ */
+public class EventFrame extends GatewayFrame {
+
+    private final String event;
+    private final Object payload;
+    private final Integer seq;
+
+    @JsonCreator
+    public EventFrame(
+            @JsonProperty("type") String type,
+            @JsonProperty("event") String event,
+            @JsonProperty("payload") Object payload,
+            @JsonProperty("seq") Integer seq) {
+        super("event");
+        this.event = event;
+        this.payload = payload;
+        this.seq = seq;
+    }
+
+    public String getEvent() { return event; }
+    public Object getPayload() { return payload; }
+    public Integer getSeq() { return seq; }
+}
