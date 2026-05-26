@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.hiwepy.openclaw.exception.OpenClawHttpException;
 import io.github.hiwepy.openclaw.util.OpenClawStrings;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -39,6 +40,7 @@ import java.util.Objects;
  *
  * @see <a href="https://docs.openclaw.ai/automation/cron-jobs#webhooks">Webhook 文档（cron-jobs）</a>
  */
+@Slf4j
 public class OpenClawGatewayHttpClient implements AutoCloseable {
 
     /**
@@ -94,7 +96,7 @@ public class OpenClawGatewayHttpClient implements AutoCloseable {
         }
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("text", text);
-        body.put("mode", (mode == null || mode.trim().isEmpty()) ? "now" : mode);
+        body.put("mode", OpenClawStrings.isBlank(mode) ? "now" : mode);
         return postWebhook(resolveHooksSubPath("wake"), body).getBody();
     }
 
@@ -117,30 +119,28 @@ public class OpenClawGatewayHttpClient implements AutoCloseable {
         }
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("message", request.getMessage());
-        if (request.getAgentId() != null && !request.getAgentId().isEmpty()) {
+        if (OpenClawStrings.isNotBlank(request.getAgentId())) {
             body.put("agentId", request.getAgentId());
         }
-        String name = request.getName();
-        body.put("name", (name != null && !name.isEmpty()) ? name : "Generation");
-        String wakeMode = request.getWakeMode();
-        body.put("wakeMode", (wakeMode != null && !wakeMode.isEmpty()) ? wakeMode : "now");
+        body.put("name", OpenClawStrings.isNotBlank(request.getName()) ? request.getName() : "Generation");
+        body.put("wakeMode", OpenClawStrings.isNotBlank(request.getWakeMode()) ? request.getWakeMode() : "now");
         body.put("timeoutSeconds", request.getTimeoutSeconds());
-        if (request.getSessionKey() != null && !request.getSessionKey().isEmpty()) {
+        if (OpenClawStrings.isNotBlank(request.getSessionKey())) {
             body.put("sessionKey", request.getSessionKey());
         }
         if (request.getDeliver() != null) {
             body.put("deliver", request.getDeliver());
         }
-        if (request.getChannel() != null && !request.getChannel().isEmpty()) {
+        if (OpenClawStrings.isNotBlank(request.getChannel())) {
             body.put("channel", request.getChannel());
         }
-        if (request.getTo() != null && !request.getTo().isEmpty()) {
+        if (OpenClawStrings.isNotBlank(request.getTo())) {
             body.put("to", request.getTo());
         }
-        if (request.getModel() != null && !request.getModel().isEmpty()) {
+        if (OpenClawStrings.isNotBlank(request.getModel())) {
             body.put("model", request.getModel());
         }
-        if (request.getThinking() != null && !request.getThinking().isEmpty()) {
+        if (OpenClawStrings.isNotBlank(request.getThinking())) {
             body.put("thinking", request.getThinking());
         }
         return body;
@@ -166,17 +166,18 @@ public class OpenClawGatewayHttpClient implements AutoCloseable {
      */
     private HttpResult postWebhook(String hookPath, Map<String, Object> body) {
         String base = config.getGatewayBaseUrl();
-        if (base == null || base.isEmpty()) {
+        if (OpenClawStrings.isBlank(base)) {
             throw new OpenClawHttpException("OpenClaw gatewayBaseUrl is empty", null);
         }
         String url = base.replaceAll("/+$", "") + hookPath;
         String token = config.resolveHooksBearerToken();
         try {
             String json = objectMapper.writeValueAsString(body);
+            log.debug("POST webhook url={} bodyLen={}", url, json.length());
             HttpPost post = new HttpPost(url);
             post.setHeader("Content-Type", "application/json");
             post.setEntity(new StringEntity(json, ContentType.APPLICATION_JSON));
-            if (token != null && !token.trim().isEmpty()) {
+            if (OpenClawStrings.isNotBlank(token)) {
                 if (config.isHooksUseXOpenclawTokenHeader()) {
                     post.setHeader("x-openclaw-token", token);
                 } else {
@@ -189,14 +190,17 @@ public class OpenClawGatewayHttpClient implements AutoCloseable {
                         ? EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8)
                         : "";
                 if (status < 200 || status >= 300) {
+                    log.warn("OpenClaw webhook returned non-2xx status={} url={}", status, url);
                     throw new OpenClawHttpException(
                             "OpenClaw webhook returned status " + status, status, respBody);
                 }
+                log.debug("OpenClaw webhook success status={} url={}", status, url);
                 return new HttpResult(status, respBody);
             }
         } catch (OpenClawHttpException e) {
             throw e;
         } catch (Exception e) {
+            log.error("OpenClaw webhook invoke failed url={} error={}", url, e.getMessage(), e);
             throw new OpenClawHttpException("OpenClaw webhook invoke failed: " + e.getMessage(), e);
         }
     }
@@ -205,7 +209,7 @@ public class OpenClawGatewayHttpClient implements AutoCloseable {
      * 规范化自定义 hook 名称，防止路径注入或非法字符。
      */
     static String normalizeHookName(String hookName) {
-        if (hookName == null || hookName.trim().isEmpty()) {
+        if (OpenClawStrings.isBlank(hookName)) {
             throw new IllegalArgumentException("hookName is required");
         }
         String normalized = hookName.trim();

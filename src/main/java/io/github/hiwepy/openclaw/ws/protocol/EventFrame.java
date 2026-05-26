@@ -2,10 +2,12 @@ package io.github.hiwepy.openclaw.ws.protocol;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
 
 /**
  * Gateway→客户端推送事件帧：{@code { type: "event", event, payload, seq }}。
  */
+@Getter
 public class EventFrame extends GatewayFrame {
 
     private final String event;
@@ -23,8 +25,4 @@ public class EventFrame extends GatewayFrame {
         this.payload = payload;
         this.seq = seq;
     }
-
-    public String getEvent() { return event; }
-    public Object getPayload() { return payload; }
-    public Integer getSeq() { return seq; }
 }

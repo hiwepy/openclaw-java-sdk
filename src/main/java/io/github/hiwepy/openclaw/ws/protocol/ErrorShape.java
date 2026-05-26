@@ -2,10 +2,14 @@ package io.github.hiwepy.openclaw.ws.protocol;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+import lombok.ToString;
 
 /**
  * Gateway RPC 错误结构。
  */
+@Getter
+@ToString(of = {"code", "message"})
 public class ErrorShape {
 
     private final String code;
@@ -26,16 +30,5 @@ public class ErrorShape {
         this.details = details;
         this.retryable = retryable;
         this.retryAfterMs = retryAfterMs;
-    }
-
-    public String getCode() { return code; }
-    public String getMessage() { return message; }
-    public Object getDetails() { return details; }
-    public Boolean getRetryable() { return retryable; }
-    public Integer getRetryAfterMs() { return retryAfterMs; }
-
-    @Override
-    public String toString() {
-        return "ErrorShape{code='" + code + "', message='" + message + "'}";
     }
 }
