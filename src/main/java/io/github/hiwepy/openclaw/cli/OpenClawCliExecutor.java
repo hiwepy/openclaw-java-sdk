@@ -1,16 +1,15 @@
 package io.github.hiwepy.openclaw.cli;
 
 import io.github.hiwepy.openclaw.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.cli.support.SubprocessExecutionSupport;
 import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.ExecuteWatchdog;
-import org.apache.commons.exec.PumpStreamHandler;
+import org.apache.commons.exec.DefaultExecuteResultHandler;
+import org.apache.commons.exec.ExecuteException;
 
-import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.Objects;
 
 /**
@@ -21,8 +20,12 @@ public class OpenClawCliExecutor {
 
     private final OpenClawClientConfig config;
 
+    /**
+     * @param config 客户端配置，不得为 null
+     */
     public OpenClawCliExecutor(OpenClawClientConfig config) {
         this.config = Objects.requireNonNull(config, "config");
+        SubprocessExecutionSupport.configureMaxConcurrentExecutions(config.getLocalMaxConcurrentExecutions());
     }
 
     public OpenClawClientConfig getConfig() {
@@ -35,39 +38,82 @@ public class OpenClawCliExecutor {
     public OpenClawCliResult execute(OpenClawCliRequest request) {
         Objects.requireNonNull(request, "request");
         CommandLine cmd = toCommandLine(request);
-        int timeoutSec = resolveTimeoutSeconds(request);
+        long timeoutMs = resolveTimeoutMillis(request);
 
-        DefaultExecutor executor = DefaultExecutor.builder().get();
-        ExecuteWatchdog watchdog =
-                ExecuteWatchdog.builder().setTimeout(Duration.ofSeconds(Math.max(1, timeoutSec))).get();
-        executor.setWatchdog(watchdog);
-
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ByteArrayOutputStream err = new ByteArrayOutputStream();
-        executor.setStreamHandler(new PumpStreamHandler(out, err));
+        File workingDirectory = resolveWorkingDirectory();
+        SubprocessExecutionSupport.ExecutionRequest execRequest =
+                new SubprocessExecutionSupport.ExecutionRequest(cmd, workingDirectory, null, timeoutMs);
 
         try {
-            int exit = executor.execute(cmd);
-            String stdout = out.toString(StandardCharsets.UTF_8);
-            String stderr = err.toString(StandardCharsets.UTF_8);
-            return new OpenClawCliResult(exit, stdout, stderr);
+            SubprocessExecutionSupport.RunSession session = executeSubprocess(execRequest);
+            String stdout = session.getStdout().toString(StandardCharsets.UTF_8);
+            String stderr = session.getStderr().toString(StandardCharsets.UTF_8);
+
+            if (session.timedOut()) {
+                log.warn("openclaw timed out after {} ms: {}", timeoutMs, cmd);
+                stderr = appendLine(stderr, "openclaw CLI timed out after " + timeoutMs + " ms");
+                return new OpenClawCliResult(-1, stdout, stderr);
+            }
+
+            DefaultExecuteResultHandler handler = session.getHandler();
+            Exception asyncFailure = handler.getException();
+            if (asyncFailure instanceof ExecuteException ex) {
+                return new OpenClawCliResult(ex.getExitValue(), stdout, stderr);
+            }
+            if (asyncFailure != null) {
+                log.warn("openclaw async failure: {}", asyncFailure.getMessage());
+                stderr = appendLine(stderr, asyncFailure.getMessage());
+                return new OpenClawCliResult(-1, stdout, stderr);
+            }
+
+            try {
+                int exit = handler.getExitValue();
+                return new OpenClawCliResult(exit, stdout, stderr);
+            } catch (IllegalStateException e) {
+                log.warn("openclaw completed without exit code: {}", e.getMessage());
+                stderr = appendLine(stderr, e.getMessage());
+                return new OpenClawCliResult(-1, stdout, stderr);
+            }
         } catch (Exception e) {
             log.warn("openclaw execution failed: {}", e.getMessage());
-            String stderr = err.toString(StandardCharsets.UTF_8);
-            if (OpenClawStrings.isNotBlank(stderr)) {
-                stderr = stderr + "\n";
-            }
-            stderr = stderr + e.getMessage();
-            return new OpenClawCliResult(-1, out.toString(StandardCharsets.UTF_8), stderr);
+            return new OpenClawCliResult(-1, "", e.getMessage());
         }
     }
 
-    private int resolveTimeoutSeconds(OpenClawCliRequest request) {
+    /**
+     * 启动子进程（包内可见，供单测注入失败场景）。
+     */
+    SubprocessExecutionSupport.RunSession executeSubprocess(SubprocessExecutionSupport.ExecutionRequest request)
+            throws Exception {
+        return SubprocessExecutionSupport.execute(request);
+    }
+
+    private static String appendLine(String base, String line) {
+        if (OpenClawStrings.isNotBlank(base)) {
+            return base + "\n" + line;
+        }
+        return line;
+    }
+
+    private File resolveWorkingDirectory() {
+        String wdProperty = config.getLocalWorkingDirectory();
+        if (OpenClawStrings.isBlank(wdProperty)) {
+            return null;
+        }
+        File wd = new File(wdProperty.trim());
+        if (!wd.isDirectory()) {
+            throw new IllegalArgumentException(
+                    "openclaw.local-working-directory is not an existing directory: " + wd.getAbsolutePath());
+        }
+        return wd;
+    }
+
+    private long resolveTimeoutMillis(OpenClawCliRequest request) {
         Integer t = request.getTimeoutSeconds();
         if (t != null && t > 0) {
-            return t;
+            return t * 1000L;
         }
-        return Math.max(1, config.getLocalTimeoutSeconds());
+        return Math.max(1L, config.getLocalTimeoutSeconds()) * 1000L;
     }
 
     /**

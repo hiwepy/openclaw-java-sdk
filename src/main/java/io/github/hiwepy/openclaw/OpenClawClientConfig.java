@@ -76,6 +76,16 @@ public class OpenClawClientConfig {
     /** 本地 agent 命令超时（秒） */
     private int localTimeoutSeconds = 300;
 
+    /**
+     * 本地 CLI 子进程工作目录；为空时使用 JVM 当前目录。
+     */
+    private String localWorkingDirectory;
+
+    /**
+     * 本机 CLI 子进程最大并发数；小于等于 0 时使用 CPU 核心数与 2 的较大值。
+     */
+    private int localMaxConcurrentExecutions = 0;
+
     /** 探测本地运行时是否可用的超时（秒） */
     private int localProbeTimeoutSeconds = 5;
 
@@ -123,6 +133,10 @@ public class OpenClawClientConfig {
         }
         while (raw.endsWith("/") && raw.length() > 1) {
             raw = raw.substring(0, raw.length() - 1);
+        }
+        if ("/".equals(raw)) {
+            throw new IllegalArgumentException(
+                    "hooks.path must be a dedicated subpath (e.g. /hooks); root path '/' is rejected by Gateway");
         }
         return raw;
     }
