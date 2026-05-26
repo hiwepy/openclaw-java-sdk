@@ -73,7 +73,8 @@ public class OpenClawGatewayHttpClient implements AutoCloseable {
      * 对应 {@code POST /hooks/agent}：触发一次 agent webhook 调用并返回解析结果。
      * <p>请求体与 Gateway 文档一致：{@code message}（required）、{@code name}、{@code agentId}、
      * {@code sessionKey}、{@code wakeMode}、{@code deliver}、{@code channel}、{@code to}、
-     * {@code model}、{@code thinking}、{@code timeoutSeconds}；可选字段为空时省略键。</p>
+     * {@code model}、{@code fallbacks}、{@code thinking}、{@code timeoutSeconds}；
+     * 可选字段未显式设置时省略键。</p>
      *
      * @param request 请求体字段
      */
@@ -108,9 +109,14 @@ public class OpenClawGatewayHttpClient implements AutoCloseable {
         if (OpenClawStrings.isBlank(text)) {
             throw new IllegalArgumentException("webhooks wake: text is required");
         }
+        String normalizedMode = OpenClawStrings.defaultIfBlank(mode, "now");
+        if (!"now".equals(normalizedMode) && !"next-heartbeat".equals(normalizedMode)) {
+            throw new IllegalArgumentException(
+                    "webhooks wake: mode must be 'now' or 'next-heartbeat', got: " + mode);
+        }
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("text", text.trim());
-        body.put("mode", OpenClawStrings.defaultIfBlank(mode, "now"));
+        body.put("mode", normalizedMode);
         return postWebhook(resolveHooksSubPath("wake"), body).getBody();
     }
 
@@ -144,9 +150,11 @@ public class OpenClawGatewayHttpClient implements AutoCloseable {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("message", request.getMessage().trim());
         OpenClawStrings.putIfNotBlank(body, "agentId", request.getAgentId());
-        body.put("name", OpenClawStrings.defaultIfBlank(request.getName(), "Generation"));
-        body.put("wakeMode", OpenClawStrings.defaultIfBlank(request.getWakeMode(), "now"));
-        body.put("timeoutSeconds", request.getTimeoutSeconds());
+        OpenClawStrings.putIfNotBlank(body, "name", request.getName());
+        OpenClawStrings.putIfNotBlank(body, "wakeMode", request.getWakeMode());
+        if (request.getTimeoutSeconds() != null) {
+            body.put("timeoutSeconds", request.getTimeoutSeconds());
+        }
         OpenClawStrings.putIfNotBlank(body, "sessionKey", request.getSessionKey());
         if (request.getDeliver() != null) {
             body.put("deliver", request.getDeliver());
@@ -155,6 +163,9 @@ public class OpenClawGatewayHttpClient implements AutoCloseable {
         OpenClawStrings.putIfNotBlank(body, "to", request.getTo());
         OpenClawStrings.putIfNotBlank(body, "model", request.getModel());
         OpenClawStrings.putIfNotBlank(body, "thinking", request.getThinking());
+        if (request.getFallbacks() != null) {
+            body.put("fallbacks", request.getFallbacks());
+        }
         return body;
     }
 
