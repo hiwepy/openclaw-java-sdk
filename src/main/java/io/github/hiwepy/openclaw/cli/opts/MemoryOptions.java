@@ -1,5 +1,7 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
+import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import io.github.hiwepy.openclaw.cli.args.CliSubArgs;
 
 import java.util.ArrayList;
@@ -176,7 +178,7 @@ public final class MemoryOptions implements CliSubArgs {
         this.remBackfillStageShortTerm = b.remBackfillStageShortTerm;
         this.remBackfillRollback = b.remBackfillRollback;
         this.remBackfillRollbackShortTerm = b.remBackfillRollbackShortTerm;
-        this.extra = b.extra == null ? List.of() : List.copyOf(b.extra);
+        this.extra = b.extra == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.extra);
     }
 
     /**
@@ -208,10 +210,10 @@ public final class MemoryOptions implements CliSubArgs {
                 break;
             case SEARCH:
                 out.add("search");
-                if (searchQuery != null && !searchQuery.isBlank()) {
+                if (searchQuery != null && OpenClawStrings.isNotBlank(searchQuery)) {
                     out.add("--query");
                     out.add(searchQuery.trim());
-                } else if (searchPositional != null && !searchPositional.isBlank()) {
+                } else if (searchPositional != null && OpenClawStrings.isNotBlank(searchPositional)) {
                     out.add(searchPositional.trim());
                 }
                 OpenClawCliArgv.addIfNotNull(out, "--max-results", maxResults);
@@ -232,7 +234,7 @@ public final class MemoryOptions implements CliSubArgs {
                 break;
             case PROMOTE_EXPLAIN:
                 out.add("promote-explain");
-                if (promoteExplainSelector != null && !promoteExplainSelector.isBlank()) {
+                if (promoteExplainSelector != null && OpenClawStrings.isNotBlank(promoteExplainSelector)) {
                     out.add(promoteExplainSelector.trim());
                 }
                 OpenClawCliArgv.addIfPresent(out, "--agent", agent);

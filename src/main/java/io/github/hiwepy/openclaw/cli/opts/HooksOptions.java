@@ -1,5 +1,7 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
+import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import io.github.hiwepy.openclaw.cli.args.CliSubArgs;
 
 import java.util.ArrayList;
@@ -89,7 +91,7 @@ public final class HooksOptions implements CliSubArgs {
         this.installSpec = b.installSpec;
         this.installLink = b.installLink;
         this.installPin = b.installPin;
-        this.extra = b.extra == null ? List.of() : List.copyOf(b.extra);
+        this.extra = b.extra == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.extra);
     }
 
     /**
@@ -121,7 +123,7 @@ public final class HooksOptions implements CliSubArgs {
                 break;
             case INFO:
                 out.add("info");
-                if (hookName != null && !hookName.isBlank()) {
+                if (hookName != null && OpenClawStrings.isNotBlank(hookName)) {
                     out.add(hookName.trim());
                 }
                 OpenClawCliArgv.addFlag(out, "--json", infoJson);
@@ -132,19 +134,19 @@ public final class HooksOptions implements CliSubArgs {
                 break;
             case ENABLE:
                 out.add("enable");
-                if (hookName != null && !hookName.isBlank()) {
+                if (hookName != null && OpenClawStrings.isNotBlank(hookName)) {
                     out.add(hookName.trim());
                 }
                 break;
             case DISABLE:
                 out.add("disable");
-                if (hookName != null && !hookName.isBlank()) {
+                if (hookName != null && OpenClawStrings.isNotBlank(hookName)) {
                     out.add(hookName.trim());
                 }
                 break;
             case INSTALL:
                 out.add("install");
-                if (installSpec != null && !installSpec.isBlank()) {
+                if (installSpec != null && OpenClawStrings.isNotBlank(installSpec)) {
                     out.add(installSpec.trim());
                 }
                 OpenClawCliArgv.addFlag(out, "--link", installLink);

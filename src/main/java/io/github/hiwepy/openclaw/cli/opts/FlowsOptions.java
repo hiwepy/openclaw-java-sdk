@@ -1,5 +1,7 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
+import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import io.github.hiwepy.openclaw.cli.args.CliSubArgs;
 
 import java.util.ArrayList;
@@ -49,7 +51,7 @@ public final class FlowsOptions implements CliSubArgs {
         this.mode = b.mode;
         this.listJson = b.listJson;
         this.lookup = b.lookup;
-        this.extra = b.extra == null ? List.of() : List.copyOf(b.extra);
+        this.extra = b.extra == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.extra);
     }
 
     /**
@@ -73,13 +75,13 @@ public final class FlowsOptions implements CliSubArgs {
                 break;
             case SHOW:
                 out.add("show");
-                if (lookup != null && !lookup.isBlank()) {
+                if (lookup != null && OpenClawStrings.isNotBlank(lookup)) {
                     out.add(lookup.trim());
                 }
                 break;
             case CANCEL:
                 out.add("cancel");
-                if (lookup != null && !lookup.isBlank()) {
+                if (lookup != null && OpenClawStrings.isNotBlank(lookup)) {
                     out.add(lookup.trim());
                 }
                 break;

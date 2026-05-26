@@ -1,5 +1,6 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
 import io.github.hiwepy.openclaw.cli.args.CliSubArgs;
 
 import java.util.ArrayList;
@@ -253,7 +254,7 @@ public final class OnboardOptions implements CliSubArgs {
          * @return 不可变 {@link OnboardOptions}
          */
         public OnboardOptions build() {
-            return new OnboardOptions(List.copyOf(s));
+            return new OnboardOptions(OpenClawLists.copyOf(s));
         }
     }
 }

@@ -1,5 +1,6 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -14,10 +15,10 @@ class CliBatch6OptionsTest {
     @Test
     void models_status_and_auth_login() {
         assertEquals(
-                List.of("status", "--json", "--probe", "--agent", "ops"),
+                OpenClawLists.of("status", "--json", "--probe", "--agent", "ops"),
                 ModelsOptions.builder().status().statusJson(true).probe(true).agent("ops").build().toSubcommandArguments());
         assertEquals(
-                List.of("auth", "login", "--provider", "openai-codex", "--set-default"),
+                OpenClawLists.of("auth", "login", "--provider", "openai-codex", "--set-default"),
                 ModelsOptions.builder()
                         .authLogin("openai-codex")
                         .authSetDefault(true)
@@ -28,24 +29,24 @@ class CliBatch6OptionsTest {
     @Test
     void security_audit() {
         assertEquals(
-                List.of("audit", "--deep", "--json"),
+                OpenClawLists.of("audit", "--deep", "--json"),
                 SecurityOptions.builder().audit().deep(true).json(true).build().toSubcommandArguments());
     }
 
     @Test
     void secrets_reload_and_apply() {
         assertEquals(
-                List.of("reload", "--url", "ws://127.0.0.1:18789", "--json"),
+                OpenClawLists.of("reload", "--url", "ws://127.0.0.1:18789", "--json"),
                 SecretsOptions.builder().reload().gatewayUrl("ws://127.0.0.1:18789").json(true).build().toSubcommandArguments());
         assertEquals(
-                List.of("apply", "--from", "/tmp/plan.json", "--dry-run"),
+                OpenClawLists.of("apply", "--from", "/tmp/plan.json", "--dry-run"),
                 SecretsOptions.builder().apply("/tmp/plan.json").dryRun(true).build().toSubcommandArguments());
     }
 
     @Test
     void sandbox_recreate() {
         assertEquals(
-                List.of("recreate", "--all", "--browser", "--force"),
+                OpenClawLists.of("recreate", "--all", "--browser", "--force"),
                 SandboxOptions.builder().recreate().recreateAll(true).recreateBrowser(true).force(true).build().toSubcommandArguments());
     }
 }

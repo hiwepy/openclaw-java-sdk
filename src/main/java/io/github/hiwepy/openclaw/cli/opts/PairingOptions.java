@@ -1,5 +1,7 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
+import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import io.github.hiwepy.openclaw.cli.args.CliSubArgs;
 
 import java.util.ArrayList;
@@ -66,7 +68,7 @@ public final class PairingOptions implements CliSubArgs {
         this.json = b.json;
         this.approveCode = b.approveCode;
         this.notify = b.notify;
-        this.extra = b.extra == null ? List.of() : List.copyOf(b.extra);
+        this.extra = b.extra == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.extra);
     }
 
     /**
@@ -84,7 +86,7 @@ public final class PairingOptions implements CliSubArgs {
         List<String> out = new ArrayList<>();
         if (verb == Verb.LIST) {
             out.add("list");
-            if (channelPositional != null && !channelPositional.isBlank()) {
+            if (channelPositional != null && OpenClawStrings.isNotBlank(channelPositional)) {
                 out.add(channelPositional.trim());
             }
             OpenClawCliArgv.addIfPresent(out, "--channel", channel);
@@ -94,10 +96,10 @@ public final class PairingOptions implements CliSubArgs {
             out.add("approve");
             OpenClawCliArgv.addIfPresent(out, "--channel", channel);
             OpenClawCliArgv.addIfPresent(out, "--account", account);
-            if (channel == null && channelPositional != null && !channelPositional.isBlank()) {
+            if (channel == null && channelPositional != null && OpenClawStrings.isNotBlank(channelPositional)) {
                 out.add(channelPositional.trim());
             }
-            if (approveCode != null && !approveCode.isBlank()) {
+            if (approveCode != null && OpenClawStrings.isNotBlank(approveCode)) {
                 out.add(approveCode.trim());
             }
             OpenClawCliArgv.addFlag(out, "--notify", notify);

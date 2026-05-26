@@ -1,5 +1,7 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
+import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import io.github.hiwepy.openclaw.cli.args.CliSubArgs;
 
 import java.util.ArrayList;
@@ -80,11 +82,11 @@ public final class MessageOptions implements CliSubArgs {
      * @param b 构建器快照
      */
     private MessageOptions(Builder b) {
-        this.action = b.action == null ? List.of() : List.copyOf(b.action);
+        this.action = b.action == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.action);
         this.channel = b.channel;
         this.account = b.account;
         this.target = b.target;
-        this.targets = b.targets == null ? List.of() : List.copyOf(b.targets);
+        this.targets = b.targets == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.targets);
         this.message = b.message;
         this.media = b.media;
         this.messageId = b.messageId;
@@ -93,8 +95,8 @@ public final class MessageOptions implements CliSubArgs {
         this.dryRun = b.dryRun;
         this.verbose = b.verbose;
         this.pollQuestion = b.pollQuestion;
-        this.pollOptions = b.pollOptions == null ? List.of() : List.copyOf(b.pollOptions);
-        this.extra = b.extra == null ? List.of() : List.copyOf(b.extra);
+        this.pollOptions = b.pollOptions == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.pollOptions);
+        this.extra = b.extra == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.extra);
     }
 
     /**
@@ -121,7 +123,7 @@ public final class MessageOptions implements CliSubArgs {
         OpenClawCliArgv.addIfPresent(out, "--emoji", emoji);
         OpenClawCliArgv.addIfPresent(out, "--poll-question", pollQuestion);
         for (String opt : pollOptions) {
-            if (opt != null && !opt.isBlank()) {
+            if (opt != null && OpenClawStrings.isNotBlank(opt)) {
                 out.add("--poll-option");
                 out.add(opt.trim());
             }
@@ -163,7 +165,7 @@ public final class MessageOptions implements CliSubArgs {
             this.action = new ArrayList<>();
             if (parts != null) {
                 for (String p : parts) {
-                    if (p != null && !p.isBlank()) {
+                    if (p != null && OpenClawStrings.isNotBlank(p)) {
                         action.add(p.trim());
                     }
                 }
@@ -203,7 +205,7 @@ public final class MessageOptions implements CliSubArgs {
          * @return {@code this}
          */
         public Builder addTarget(String t) {
-            if (t != null && !t.isBlank()) {
+            if (t != null && OpenClawStrings.isNotBlank(t)) {
                 targets.add(t.trim());
             }
             return this;
@@ -286,7 +288,7 @@ public final class MessageOptions implements CliSubArgs {
          * @return {@code this}
          */
         public Builder pollOption(String option) {
-            if (option != null && !option.isBlank()) {
+            if (option != null && OpenClawStrings.isNotBlank(option)) {
                 pollOptions.add(option.trim());
             }
             return this;

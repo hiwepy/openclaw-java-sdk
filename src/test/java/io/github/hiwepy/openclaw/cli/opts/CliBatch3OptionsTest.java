@@ -1,5 +1,6 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -14,7 +15,7 @@ class CliBatch3OptionsTest {
     @Test
     void node_run_and_install() {
         assertEquals(
-                List.of("run", "--host", "gw.example.com", "--port", "18789", "--tls"),
+                OpenClawLists.of("run", "--host", "gw.example.com", "--port", "18789", "--tls"),
                 NodeOptions.builder()
                         .run()
                         .host("gw.example.com")
@@ -22,9 +23,9 @@ class CliBatch3OptionsTest {
                         .tls(true)
                         .build()
                         .toSubcommandArguments());
-        assertEquals(List.of("status", "--json"), NodeOptions.builder().status().json(true).build().toSubcommandArguments());
+        assertEquals(OpenClawLists.of("status", "--json"), NodeOptions.builder().status().json(true).build().toSubcommandArguments());
         assertEquals(
-                List.of("install", "--node-id", "n1", "--display-name", "edge-1", "--force"),
+                OpenClawLists.of("install", "--node-id", "n1", "--display-name", "edge-1", "--force"),
                 NodeOptions.builder()
                         .install()
                         .nodeId("n1")
@@ -37,7 +38,7 @@ class CliBatch3OptionsTest {
     @Test
     void nodes_list_and_invoke() {
         assertEquals(
-                List.of("list", "--connected", "--last-connected", "node-a", "--json"),
+                OpenClawLists.of("list", "--connected", "--last-connected", "node-a", "--json"),
                 NodesOptions.builder()
                         .list()
                         .listConnected(true)
@@ -46,8 +47,7 @@ class CliBatch3OptionsTest {
                         .build()
                         .toSubcommandArguments());
         assertEquals(
-                List.of(
-                        "invoke",
+                OpenClawLists.of("invoke",
                         "--node",
                         "n1",
                         "--command",
@@ -73,7 +73,7 @@ class CliBatch3OptionsTest {
     @Test
     void devices_approve_rotate() {
         assertEquals(
-                List.of("approve", "--latest", "--url", "wss://x", "--json"),
+                OpenClawLists.of("approve", "--latest", "--url", "wss://x", "--json"),
                 DevicesOptions.builder()
                         .approve()
                         .approveLatest(true)
@@ -82,7 +82,7 @@ class CliBatch3OptionsTest {
                         .build()
                         .toSubcommandArguments());
         assertEquals(
-                List.of("rotate", "--device", "d1", "--role", "ops", "--scope", "a", "--scope", "b"),
+                OpenClawLists.of("rotate", "--device", "d1", "--role", "ops", "--scope", "a", "--scope", "b"),
                 DevicesOptions.builder().rotate("d1", "ops").scope("a").scope("b").build().toSubcommandArguments());
     }
 }

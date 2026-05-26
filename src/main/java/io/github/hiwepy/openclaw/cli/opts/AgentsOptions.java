@@ -1,5 +1,7 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
+import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import io.github.hiwepy.openclaw.cli.args.CliSubArgs;
 
 import java.util.ArrayList;
@@ -178,7 +180,7 @@ public final class AgentsOptions implements CliSubArgs {
         this.workspace = b.workspace;
         this.model = b.model;
         this.agentDir = b.agentDir;
-        this.bindValues = b.bindValues == null ? List.of() : List.copyOf(b.bindValues);
+        this.bindValues = b.bindValues == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.bindValues);
         this.nonInteractive = b.nonInteractive;
         this.addJson = b.addJson;
         this.bindingsAgent = b.bindingsAgent;
@@ -200,7 +202,7 @@ public final class AgentsOptions implements CliSubArgs {
         this.identityEmoji = b.identityEmoji;
         this.identityAvatar = b.identityAvatar;
         this.identityJson = b.identityJson;
-        this.extra = b.extra == null ? List.of() : List.copyOf(b.extra);
+        this.extra = b.extra == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.extra);
     }
 
     public static Builder builder() {
@@ -218,7 +220,7 @@ public final class AgentsOptions implements CliSubArgs {
                 break;
             case ADD:
                 out.add("add");
-                if (addName != null && !addName.isBlank()) {
+                if (addName != null && OpenClawStrings.isNotBlank(addName)) {
                     out.add(addName.trim());
                 }
                 break;
@@ -236,7 +238,7 @@ public final class AgentsOptions implements CliSubArgs {
                 break;
             case DELETE:
                 out.add("delete");
-                if (deleteAgentId != null && !deleteAgentId.isBlank()) {
+                if (deleteAgentId != null && OpenClawStrings.isNotBlank(deleteAgentId)) {
                     out.add(deleteAgentId.trim());
                 }
                 break;
@@ -372,7 +374,7 @@ public final class AgentsOptions implements CliSubArgs {
 
         /** 可重复的 {@code --bind}。 */
         public Builder bind(String channelBinding) {
-            if (channelBinding != null && !channelBinding.isBlank()) {
+            if (channelBinding != null && OpenClawStrings.isNotBlank(channelBinding)) {
                 this.bindValues.add(channelBinding.trim());
             }
             return this;

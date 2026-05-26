@@ -1,5 +1,7 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
+import io.github.hiwepy.openclaw.util.OpenClawLists;
+import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import io.github.hiwepy.openclaw.cli.args.CliSubArgs;
 
 import java.util.ArrayList;
@@ -115,9 +117,9 @@ public final class AcpOptions implements CliSubArgs {
         this.verbose = b.verbose;
         this.cwd = b.cwd;
         this.server = b.server;
-        this.serverArgs = b.serverArgs == null ? List.of() : List.copyOf(b.serverArgs);
+        this.serverArgs = b.serverArgs == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.serverArgs);
         this.serverVerbose = b.serverVerbose;
-        this.extra = b.extra == null ? List.of() : List.copyOf(b.extra);
+        this.extra = b.extra == null ? OpenClawLists.empty() : OpenClawLists.copyOf(b.extra);
     }
 
     /**
@@ -332,7 +334,7 @@ public final class AcpOptions implements CliSubArgs {
          * @return {@code this}
          */
         public Builder addServerArg(String token) {
-            if (token != null && !token.isBlank()) {
+            if (token != null && OpenClawStrings.isNotBlank(token)) {
                 serverArgs.add(token.trim());
             }
             return this;
