@@ -7,8 +7,8 @@ import io.github.hiwepy.openclaw.ws.OpenClawGatewayWsClient;
 import io.github.hiwepy.openclaw.ws.OpenClawWsListener;
 import io.github.hiwepy.openclaw.ws.protocol.ChatSendParams;
 import io.github.hiwepy.openclaw.ws.protocol.HelloOk;
-import io.github.hiwepy.openclaw.ws.protocol.ResponseFrame;
 import io.github.hiwepy.openclaw.ws.protocol.SessionsSendParams;
+import io.github.hiwepy.openclaw.ws.protocol.result.SessionsSendResult;
 
 import java.util.Map;
 import java.util.Objects;
@@ -175,7 +175,7 @@ public class OpenClawClient implements AutoCloseable {
     /**
      * 快捷方式：通过 WS 向指定会话发消息（非流式 RPC）。
      */
-    public ResponseFrame wsSessionsSend(String sessionKey, String message) {
+    public SessionsSendResult wsSessionsSend(String sessionKey, String message) {
         return wsClient.sessionsSend(
                 SessionsSendParams.builder().key(sessionKey).message(message).build());
     }
