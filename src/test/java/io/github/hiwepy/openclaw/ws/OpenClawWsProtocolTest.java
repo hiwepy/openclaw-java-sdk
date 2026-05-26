@@ -2,6 +2,8 @@ package io.github.hiwepy.openclaw.ws;
 
 import io.github.hiwepy.openclaw.OpenClawClientConfig;
 import io.github.hiwepy.openclaw.ws.protocol.*;
+import io.github.hiwepy.openclaw.ws.protocol.params.SessionsListParams;
+import io.github.hiwepy.openclaw.ws.protocol.result.SessionsListResult;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
@@ -149,6 +151,35 @@ class OpenClawWsProtocolTest {
         assertTrue(hello.getFeatures().getMethods().contains("chat.send"));
         assertEquals("operator", hello.getAuth().getRole());
         assertEquals(30000, hello.getPolicy().getTickIntervalMs());
+    }
+
+    @Test
+    void testSessionsListParamsSerialization() throws Exception {
+        SessionsListParams params = SessionsListParams.builder()
+                .limit(50)
+                .includeGlobal(true)
+                .agentId("main")
+                .build();
+        String json = mapper.writeValueAsString(params);
+        assertTrue(json.contains("\"limit\":50"));
+        assertTrue(json.contains("\"includeGlobal\":true"));
+        assertTrue(json.contains("\"agentId\":\"main\""));
+    }
+
+    @Test
+    void testSessionsListResultDeserialization() throws Exception {
+        String json = "{"
+                + "\"ts\":1,"
+                + "\"path\":\"/tmp/sessions\","
+                + "\"count\":1,"
+                + "\"sessions\":[{\"key\":\"agent:main:main\",\"kind\":\"direct\",\"updatedAt\":100}],"
+                + "\"defaults\":{\"model\":\"gpt-4\"}"
+                + "}";
+        SessionsListResult result = mapper.readValue(json, SessionsListResult.class);
+        assertEquals(1, result.getCount());
+        assertEquals(1, result.getSessions().size());
+        assertEquals("agent:main:main", result.getSessions().get(0).getKey());
+        assertEquals("gpt-4", result.getDefaults().getModel());
     }
 
     @Test

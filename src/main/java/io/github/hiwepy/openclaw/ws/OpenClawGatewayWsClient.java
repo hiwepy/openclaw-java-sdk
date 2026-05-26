@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.hiwepy.openclaw.OpenClawClientConfig;
 import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import io.github.hiwepy.openclaw.ws.protocol.*;
+import io.github.hiwepy.openclaw.ws.protocol.params.*;
+import io.github.hiwepy.openclaw.ws.protocol.result.*;
 import lombok.extern.slf4j.Slf4j;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
@@ -56,6 +58,9 @@ public class OpenClawGatewayWsClient extends WebSocketClient {
 
     private static final int PROTOCOL_VERSION = 1;
 
+    /** 默认 RPC 超时（毫秒） */
+    private static final long DEFAULT_RPC_TIMEOUT_MS = 120_000L;
+
     private final OpenClawClientConfig config;
     private final ObjectMapper objectMapper;
     private final List<OpenClawWsListener> listeners = new CopyOnWriteArrayList<>();
@@ -66,9 +71,16 @@ public class OpenClawGatewayWsClient extends WebSocketClient {
     /** chat.send 请求 ID → ChatStreamCollector */
     private final Map<String, ChatStreamCollector> activeChatStreams = new ConcurrentHashMap<>();
 
+    /** 串行化连接/握手/重连，避免多线程重复 connect 或复用已完成的 connectFuture */
     private final ReentrantLock connectLock = new ReentrantLock();
+
+    /** 串行化 WebSocket 写帧（Java-WebSocket 的 send 非线程安全） */
+    private final ReentrantLock writeLock = new ReentrantLock();
+
     private final AtomicReference<HelloOk> helloOkRef = new AtomicReference<>();
-    private final CompletableFuture<HelloOk> connectFuture = new CompletableFuture<>();
+
+    /** 每次连接尝试单独一个 Future，重连时替换 */
+    private volatile CompletableFuture<HelloOk> connectFuture = new CompletableFuture<>();
 
     // ============================================================
     // 构造
@@ -136,8 +148,9 @@ public class OpenClawGatewayWsClient extends WebSocketClient {
     @Override
     public void onClose(int code, String reason, boolean remote) {
         log.info("WebSocket closed: code={}, reason={}, remote={}", code, reason, remote);
+        failConnectFuture(new RuntimeException("WebSocket closed: " + reason));
+        helloOkRef.set(null);
         // 取消所有 pending RPC
-        PendingRpc pending;
         for (Map.Entry<String, PendingRpc> entry : pendingRpcs.entrySet()) {
             entry.getValue().future.completeExceptionally(
                     new RuntimeException("WebSocket closed: " + reason));
@@ -162,55 +175,150 @@ public class OpenClawGatewayWsClient extends WebSocketClient {
     // 握手
     // ============================================================
 
+    /**
+     * 在 {@link #connectLock} 下发送 connect 握手；若当前握手已完成则跳过，避免 onOpen 重复发送。
+     */
     private void sendConnectHandshake() {
-        ConnectParams.AuthInfo auth = null;
-        String token = config.getGatewayAuthToken();
-        String password = config.getGatewayAuthPassword();
-        if (OpenClawStrings.isNotBlank(token)) {
-            auth = ConnectParams.AuthInfo.token(token);
-        } else if (OpenClawStrings.isNotBlank(password)) {
-            auth = ConnectParams.AuthInfo.password(password);
-        }
-
-        ConnectParams params = new ConnectParams(
-                PROTOCOL_VERSION, PROTOCOL_VERSION,
-                new ConnectParams.ClientInfo(
-                        "openclaw-java-sdk",
-                        "OpenClaw Java SDK",
-                        "1.0.0",
-                        "java",
-                        "operator"
-                ),
-                auth
-        );
-
-        String reqId = generateId();
-        RequestFrame req = new RequestFrame(reqId, "connect", params.toParamsMap());
-
-        // 注册 connect 的 pending RPC
-        PendingRpc pending = new PendingRpc(reqId, "connect", System.currentTimeMillis());
-        pendingRpcs.put(reqId, pending);
-
+        connectLock.lock();
         try {
-            String json = objectMapper.writeValueAsString(req);
-            log.debug("Sending connect handshake: {}", json);
+            if (connectFuture.isDone()) {
+                log.debug("Skipping duplicate connect handshake");
+                return;
+            }
+
+            ConnectParams.AuthInfo auth = null;
+            String token = config.getGatewayAuthToken();
+            String password = config.getGatewayAuthPassword();
+            if (OpenClawStrings.isNotBlank(token)) {
+                auth = ConnectParams.AuthInfo.token(token);
+            } else if (OpenClawStrings.isNotBlank(password)) {
+                auth = ConnectParams.AuthInfo.password(password);
+            }
+
+            ConnectParams params = new ConnectParams(
+                    PROTOCOL_VERSION, PROTOCOL_VERSION,
+                    new ConnectParams.ClientInfo(
+                            "openclaw-java-sdk",
+                            "OpenClaw Java SDK",
+                            "1.0.0",
+                            "java",
+                            "operator"
+                    ),
+                    auth
+            );
+
+            String reqId = generateId();
+            RequestFrame req = new RequestFrame(reqId, "connect", params.toParamsMap());
+
+            PendingRpc pending = new PendingRpc(reqId, "connect", System.currentTimeMillis());
+            pendingRpcs.put(reqId, pending);
+
+            try {
+                String json = objectMapper.writeValueAsString(req);
+                log.debug("Sending connect handshake: {}", json);
+                sendFrame(json);
+            } catch (JsonProcessingException e) {
+                failConnectFuture(e);
+            }
+        } finally {
+            connectLock.unlock();
+        }
+    }
+
+    /**
+     * 准备一次新的连接尝试：已握手成功则复用；否则关闭旧连接并重置 connectFuture。
+     *
+     * @return 本次握手对应的 Future（在 connectLock 外等待，避免与 onOpen 死锁）
+     */
+    private CompletableFuture<HelloOk> beginConnectAttempt() {
+        connectLock.lock();
+        try {
+            HelloOk existing = helloOkRef.get();
+            CompletableFuture<HelloOk> current = connectFuture;
+            if (isOpen() && existing != null && current.isDone() && !current.isCompletedExceptionally()) {
+                return current;
+            }
+            if (isOpen()) {
+                log.debug("Closing existing WebSocket before reconnect");
+                super.close();
+            }
+            resetConnectStateUnderLock();
+            return connectFuture;
+        } finally {
+            connectLock.unlock();
+        }
+    }
+
+    /**
+     * 废弃进行中的握手 Future 并创建新的（调用方需已持有 {@link #connectLock}）。
+     */
+    private void resetConnectStateUnderLock() {
+        CompletableFuture<HelloOk> previous = connectFuture;
+        if (!previous.isDone()) {
+            previous.completeExceptionally(new CancellationException("Superseded by new connect attempt"));
+        }
+        helloOkRef.set(null);
+        connectFuture = new CompletableFuture<>();
+    }
+
+    private void completeConnectFuture(HelloOk helloOk) {
+        connectLock.lock();
+        try {
+            helloOkRef.set(helloOk);
+            CompletableFuture<HelloOk> handshakeFuture = connectFuture;
+            if (!handshakeFuture.isDone()) {
+                handshakeFuture.complete(helloOk);
+            }
+        } finally {
+            connectLock.unlock();
+        }
+    }
+
+    private void failConnectFuture(Throwable cause) {
+        connectLock.lock();
+        try {
+            CompletableFuture<HelloOk> handshakeFuture = connectFuture;
+            if (!handshakeFuture.isDone()) {
+                handshakeFuture.completeExceptionally(cause);
+            }
+        } finally {
+            connectLock.unlock();
+        }
+    }
+
+    /**
+     * 线程安全地向 Gateway 发送 JSON 帧。
+     */
+    private void sendFrame(String json) {
+        writeLock.lock();
+        try {
             send(json);
-        } catch (JsonProcessingException e) {
-            connectFuture.completeExceptionally(e);
+        } finally {
+            writeLock.unlock();
         }
     }
 
     /**
      * 连接 Gateway WebSocket 并阻塞等待握手完成。
      * <p>内部调用 {@code super.connectBlocking()} 建立 TCP 连接，然后等待 {@code connect} RPC 握手响应。</p>
+     * <p>多线程并发调用时由 {@link #connectLock} 串行化；已连接且握手成功时直接返回缓存的 {@link HelloOk}。</p>
      *
      * @return 握手结果（hello-ok）
      * @throws InterruptedException 线程被中断
      */
     public HelloOk connectHandshake() throws InterruptedException {
-        super.connectBlocking();
+        CompletableFuture<HelloOk> handshakeFuture = beginConnectAttempt();
+        if (handshakeFuture.isDone() && !handshakeFuture.isCompletedExceptionally()) {
+            HelloOk cached = handshakeFuture.getNow(null);
+            if (cached != null) {
+                return cached;
+            }
+        }
+        if (!isOpen()) {
+            super.connectBlocking();
+        }
         try {
-            return connectFuture.get(30, TimeUnit.SECONDS);
+            return handshakeFuture.get(30, TimeUnit.SECONDS);
         } catch (ExecutionException | TimeoutException e) {
             throw new RuntimeException("Gateway WS connect handshake failed", e);
         }
@@ -218,10 +326,24 @@ public class OpenClawGatewayWsClient extends WebSocketClient {
 
     /**
      * 异步连接并等待握手完成。
+     * <p>多线程安全：与 {@link #connectHandshake()} 共用同一套连接状态与锁。</p>
      */
     public CompletableFuture<HelloOk> connectHandshakeAsync() {
-        super.connect();
-        return connectFuture;
+        CompletableFuture<HelloOk> handshakeFuture = beginConnectAttempt();
+        if (handshakeFuture.isDone() && !handshakeFuture.isCompletedExceptionally()) {
+            return handshakeFuture;
+        }
+        if (!isOpen()) {
+            super.connect();
+        }
+        return handshakeFuture;
+    }
+
+    @Override
+    public void close() {
+        failConnectFuture(new CancellationException("Closed by client"));
+        helloOkRef.set(null);
+        super.close();
     }
 
     /**
@@ -232,28 +354,126 @@ public class OpenClawGatewayWsClient extends WebSocketClient {
     }
 
     // ============================================================
-    // RPC 调用
+    // RPC 调用（类型化 API）
     // ============================================================
 
     /**
-     * 发送 RPC 请求并等待响应。
-     *
-     * @param method RPC 方法名
-     * @param params 请求参数
-     * @param timeoutMs 超时毫秒
-     * @return 响应帧
+     * 获取会话列表（{@code sessions.list}）。
      */
-    public ResponseFrame rpc(String method, Map<String, Object> params, long timeoutMs) {
+    public SessionsListResult sessionsList(SessionsListParams params) {
+        return invokeRpc("sessions.list", params, SessionsListResult.class, DEFAULT_RPC_TIMEOUT_MS);
+    }
+
+    /**
+     * 获取会话列表（默认参数）。
+     */
+    public SessionsListResult sessionsList() {
+        return sessionsList(SessionsListParams.defaults());
+    }
+
+    /**
+     * 获取聊天历史（{@code chat.history}）。
+     */
+    public ChatHistoryResult chatHistory(ChatHistoryParams params) {
+        Objects.requireNonNull(params, "params");
+        return invokeRpc("chat.history", params, ChatHistoryResult.class, DEFAULT_RPC_TIMEOUT_MS);
+    }
+
+    /**
+     * 获取聊天历史。
+     *
+     * @param sessionKey 会话键
+     * @param limit      条数上限（可选）
+     */
+    public ChatHistoryResult chatHistory(String sessionKey, Integer limit) {
+        return chatHistory(ChatHistoryParams.of(sessionKey, limit));
+    }
+
+    /**
+     * 中止聊天 run（{@code chat.abort}）。
+     */
+    public ChatAbortResult chatAbort(ChatAbortParams params) {
+        Objects.requireNonNull(params, "params");
+        return invokeRpc("chat.abort", params, ChatAbortResult.class, DEFAULT_RPC_TIMEOUT_MS);
+    }
+
+    /**
+     * 中止指定会话上的所有进行中的 run。
+     */
+    public ChatAbortResult chatAbort(String sessionKey) {
+        return chatAbort(ChatAbortParams.abortSession(sessionKey));
+    }
+
+    /**
+     * 获取智能体身份（{@code agent.identity.get}）。
+     */
+    public AgentIdentityGetResult agentIdentityGet(AgentIdentityGetParams params) {
+        Objects.requireNonNull(params, "params");
+        return invokeRpc("agent.identity.get", params, AgentIdentityGetResult.class, DEFAULT_RPC_TIMEOUT_MS);
+    }
+
+    /**
+     * 获取当前默认智能体身份。
+     */
+    public AgentIdentityGetResult agentIdentityGet() {
+        return agentIdentityGet(AgentIdentityGetParams.empty());
+    }
+
+    /**
+     * 列出 cron 任务（{@code cron.list}）。
+     */
+    public CronListResult cronList(CronListParams params) {
+        Objects.requireNonNull(params, "params");
+        return invokeRpc("cron.list", params, CronListResult.class, DEFAULT_RPC_TIMEOUT_MS);
+    }
+
+    /**
+     * 列出 cron 任务（默认参数）。
+     */
+    public CronListResult cronList() {
+        return cronList(CronListParams.defaults());
+    }
+
+    /**
+     * 读取配置快照（{@code config.get}）。
+     */
+    public ConfigGetResult configGet() {
+        return invokeRpc("config.get", new Object(), ConfigGetResult.class, DEFAULT_RPC_TIMEOUT_MS);
+    }
+
+    /**
+     * 发送 RPC 并解析为指定类型；{@code ok: false} 时抛出 {@link OpenClawWsRpcException}。
+     */
+    private <T> T invokeRpc(String method, Object params, Class<T> responseType, long timeoutMs) {
+        Objects.requireNonNull(method, "method");
+        Objects.requireNonNull(responseType, "responseType");
+        ResponseFrame frame = executeRpc(method, params, timeoutMs);
+        if (!frame.isOk()) {
+            throw new OpenClawWsRpcException(method, frame.getError());
+        }
+        Object payload = frame.getPayload();
+        if (payload == null) {
+            return null;
+        }
+        return objectMapper.convertValue(payload, responseType);
+    }
+
+    /**
+     * 底层 RPC：发送请求帧并等待 {@link ResponseFrame}（不解析 payload）。
+     */
+    private ResponseFrame executeRpc(String method, Object params, long timeoutMs) {
+        requireHandshakeComplete(method);
         String reqId = generateId();
         PendingRpc pending = new PendingRpc(reqId, method, System.currentTimeMillis());
         pendingRpcs.put(reqId, pending);
 
         try {
-            RequestFrame req = new RequestFrame(reqId, method, params);
+            Map<String, Object> paramsMap = serializeRpcParams(params);
+            RequestFrame req = new RequestFrame(reqId, method, paramsMap);
             String json = objectMapper.writeValueAsString(req);
-            send(json);
+            sendFrame(json);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Failed to serialize RPC request", e);
+            throw new RuntimeException("Failed to serialize RPC request: " + method, e);
         }
 
         try {
@@ -269,18 +489,31 @@ public class OpenClawGatewayWsClient extends WebSocketClient {
         }
     }
 
-    /**
-     * 发送 RPC 请求（默认超时 120s）。
-     */
-    public ResponseFrame rpc(String method, Map<String, Object> params) {
-        return rpc(method, params, 120_000);
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> serializeRpcParams(Object params) throws JsonProcessingException {
+        if (params == null) {
+            return Collections.emptyMap();
+        }
+        if (params instanceof ChatSendParams) {
+            return ((ChatSendParams) params).toParamsMap();
+        }
+        if (params instanceof SessionsSendParams) {
+            return ((SessionsSendParams) params).toParamsMap();
+        }
+        if (params instanceof ConnectParams) {
+            return ((ConnectParams) params).toParamsMap();
+        }
+        if (params instanceof Map) {
+            return (Map<String, Object>) params;
+        }
+        return objectMapper.convertValue(params, Map.class);
     }
 
-    /**
-     * 发送 RPC 请求（无参数）。
-     */
-    public ResponseFrame rpc(String method) {
-        return rpc(method, null, 120_000);
+    private void requireHandshakeComplete(String method) {
+        if (helloOkRef.get() == null) {
+            throw new IllegalStateException(
+                    "Gateway WS handshake not complete; call connectHandshake() before " + method);
+        }
     }
 
     // ============================================================
@@ -305,7 +538,7 @@ public class OpenClawGatewayWsClient extends WebSocketClient {
         try {
             RequestFrame req = new RequestFrame(reqId, "chat.send", paramsMap);
             String json = objectMapper.writeValueAsString(req);
-            send(json);
+            sendFrame(json);
         } catch (JsonProcessingException e) {
             activeChatStreams.remove(reqId);
             handler.onError("Failed to serialize chat.send request: " + e.getMessage());
@@ -317,76 +550,14 @@ public class OpenClawGatewayWsClient extends WebSocketClient {
     // ============================================================
 
     /**
-     * 通过 {@code sessions.send} 向指定会话发消息（非流式，返回 RPC 响应）。
+     * 通过 {@code sessions.send} 向指定会话发消息（非流式）。
      *
-     * @param params 会话发送参数
-     * @return RPC 响应
+     * @param params 会话发送参数（{@code key}、{@code message} 必填）
+     * @return 发送确认（含 {@code runId} 等）
      */
-    public ResponseFrame sessionsSend(SessionsSendParams params) {
-        return rpc("sessions.send", params.toParamsMap());
-    }
-
-    // ============================================================
-    // 常用便捷方法
-    // ============================================================
-
-    /**
-     * 获取会话列表。
-     */
-    public ResponseFrame sessionsList() {
-        return rpc("sessions.list", Collections.<String, Object>emptyMap());
-    }
-
-    /**
-     * 获取聊天历史。
-     *
-     * @param sessionKey 会话键
-     * @param limit      历史条数限制
-     */
-    public ResponseFrame chatHistory(String sessionKey, int limit) {
-        Map<String, Object> params = new LinkedHashMap<>();
-        params.put("sessionKey", sessionKey);
-        params.put("limit", limit);
-        return rpc("chat.history", params);
-    }
-
-    /**
-     * 中止当前聊天。
-     *
-     * @param sessionKey 会话键
-     */
-    public ResponseFrame chatAbort(String sessionKey) {
-        Map<String, Object> params = new LinkedHashMap<>();
-        params.put("sessionKey", sessionKey);
-        return rpc("chat.abort", params);
-    }
-
-    /**
-     * 获取智能体信息。
-     */
-    public ResponseFrame agent() {
-        return rpc("agent");
-    }
-
-    /**
-     * 获取智能体身份。
-     */
-    public ResponseFrame agentIdentityGet() {
-        return rpc("agent.identity.get");
-    }
-
-    /**
-     * 列出 cron 任务。
-     */
-    public ResponseFrame cronList() {
-        return rpc("cron.list", Collections.<String, Object>emptyMap());
-    }
-
-    /**
-     * 获取配置。
-     */
-    public ResponseFrame configGet() {
-        return rpc("config.get");
+    public SessionsSendResult sessionsSend(SessionsSendParams params) {
+        Objects.requireNonNull(params, "params");
+        return invokeRpc("sessions.send", params, SessionsSendResult.class, DEFAULT_RPC_TIMEOUT_MS);
     }
 
     // ============================================================
@@ -431,14 +602,13 @@ public class OpenClawGatewayWsClient extends WebSocketClient {
                 try {
                     JsonNode payloadNode = objectMapper.valueToTree(payload);
                     HelloOk helloOk = objectMapper.treeToValue(payloadNode, HelloOk.class);
-                    helloOkRef.set(helloOk);
-                    connectFuture.complete(helloOk);
+                    completeConnectFuture(helloOk);
                     listeners.forEach(l -> l.onConnected(helloOk));
                 } catch (Exception e) {
-                    connectFuture.completeExceptionally(e);
+                    failConnectFuture(e);
                 }
             } else if ("connect".equals(connectPending.method)) {
-                connectFuture.completeExceptionally(
+                failConnectFuture(
                         new RuntimeException("Connect failed: " + (error != null ? error : "unknown")));
             } else {
                 // 非 connect 的普通 RPC
