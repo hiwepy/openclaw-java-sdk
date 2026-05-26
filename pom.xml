@@ -4,11 +4,7 @@
 
     <groupId>io.github.hiwepy</groupId>
     <artifactId>openclaw-java-sdk</artifactId>
-<<<<<<< HEAD
     <version>3.3.x.20260526-SNAPSHOT</version>
-=======
-    <version>2.3.x.20260526-SNAPSHOT</version>
->>>>>>> origin/2.3.x
     <packaging>jar</packaging>
     <name>${project.groupId}:${project.artifactId}</name>
     <description>OpenClaw external integration SDK (HTTP Gateway + local CLI)</description>
