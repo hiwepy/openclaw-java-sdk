@@ -1,6 +1,6 @@
 package io.github.hiwepy.openclaw.cli;
 
-import io.github.hiwepy.openclaw.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.api.OpenClawClientConfig;
 import org.apache.commons.exec.CommandLine;
 import org.junit.jupiter.api.Test;
 

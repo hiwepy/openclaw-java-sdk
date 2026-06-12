@@ -1,6 +1,6 @@
 package io.github.hiwepy.openclaw.cli;
 
-import io.github.hiwepy.openclaw.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.api.OpenClawClientConfig;
 import io.github.hiwepy.openclaw.cli.support.SubprocessExecutionSupport;
 import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +14,9 @@ import java.util.Objects;
 
 /**
  * 使用 Apache Commons Exec 执行 {@code openclaw}，支持文档中的全局参数与子命令。
+ *
+ * @see <a href="https://docs.openclaw.ai/gateway/cli-backends">CLI Backends</a>
+ * @see <a href="https://docs.openclaw.ai/cli">CLI Reference</a>
  */
 @Slf4j
 public class OpenClawCliExecutor {

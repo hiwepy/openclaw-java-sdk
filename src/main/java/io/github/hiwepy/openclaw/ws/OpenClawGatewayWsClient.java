@@ -4,7 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.hiwepy.openclaw.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.api.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.exception.OpenClawWsRpcException;
 import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import io.github.hiwepy.openclaw.ws.protocol.*;
 import io.github.hiwepy.openclaw.ws.protocol.params.*;
@@ -52,6 +53,9 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * ws.close();
  * }</pre>
+ *
+ * @see <a href="https://docs.openclaw.ai/gateway/protocol">Gateway Protocol</a>
+ * @see <a href="https://docs.openclaw.ai/gateway/bridge-protocol">Bridge Protocol (legacy)</a>
  */
 @Slf4j
 public class OpenClawGatewayWsClient extends WebSocketClient {

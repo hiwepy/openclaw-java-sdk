@@ -1,5 +1,12 @@
 package io.github.hiwepy.openclaw;
 
+import io.github.hiwepy.openclaw.api.InvokeAgentRequest;
+import io.github.hiwepy.openclaw.api.InvokeAgentResult;
+import io.github.hiwepy.openclaw.api.OpenClawClient;
+import io.github.hiwepy.openclaw.api.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.api.OpenClawGatewayHttpClient;
+import io.github.hiwepy.openclaw.api.OpenClawSessionKeys;
+
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

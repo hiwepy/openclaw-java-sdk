@@ -1,6 +1,6 @@
 package io.github.hiwepy.openclaw.cli.support;
 
-import io.github.hiwepy.openclaw.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.api.OpenClawClientConfig;
 import io.github.hiwepy.openclaw.cli.OpenClawCliExecutor;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

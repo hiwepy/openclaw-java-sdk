@@ -1,6 +1,6 @@
 package io.github.hiwepy.openclaw.cli;
 
-import io.github.hiwepy.openclaw.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.api.OpenClawClientConfig;
 import io.github.hiwepy.openclaw.cli.opts.DaemonOptions;
 import io.github.hiwepy.openclaw.cli.opts.GatewayCommandOptions;
 import io.github.hiwepy.openclaw.cli.opts.GatewayRpcOptions;

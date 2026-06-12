@@ -1,6 +1,5 @@
-package io.github.hiwepy.openclaw.ws;
+package io.github.hiwepy.openclaw.exception;
 
-import io.github.hiwepy.openclaw.exception.OpenClawException;
 import io.github.hiwepy.openclaw.ws.protocol.ErrorShape;
 import lombok.Getter;
 

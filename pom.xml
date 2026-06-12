@@ -1,5 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.github.hiwepy</groupId>
@@ -8,6 +9,7 @@
     <packaging>jar</packaging>
     <name>${project.groupId}:${project.artifactId}</name>
     <description>OpenClaw external integration SDK (HTTP Gateway + local CLI)</description>
+    <url>https://github.com/hiwepy/${project.artifactId}</url>
 
     <licenses>
         <license>
@@ -394,13 +396,12 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <unirest.version>4.4.5</unirest.version>
         <jackson.version>2.13.5</jackson.version>
         <commons-exec.version>1.4.0</commons-exec.version>
         <junit.version>5.8.2</junit.version>
         <slf4j.version>1.7.36</slf4j.version>
         <lombok.version>1.18.30</lombok.version>
-        <java-websocket.version>1.5.7</java-websocket.version>
+        <java-websocket.version>1.6.0</java-websocket.version>
 
         <maven.version>3.0</maven.version>
         <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
@@ -421,21 +422,11 @@
         <maven-central-publishing-plugin.version>0.10.0</maven-central-publishing-plugin.version>
         <maven-nexus-yuicompressor-plugin.version>1.1.0</maven-nexus-yuicompressor-plugin.version>
         <maven-war-plugin.version>3.2.2</maven-war-plugin.version>
-            <java-websocket.version>1.6.0</java-websocket.version>
     </properties>
 
     <dependencies>
-        <!-- HTTP client -->
-        <dependency>
-            <groupId>com.konghq</groupId>
-            <artifactId>unirest-java-core</artifactId>
-            <version>${unirest.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.konghq</groupId>
-            <artifactId>unirest-modules-jackson</artifactId>
-            <version>${unirest.version}</version>
-        </dependency>
+        <!-- HTTP client: JDK 11+ java.net.http.HttpClient (zero-dependency) -->
+
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>

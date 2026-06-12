@@ -1,5 +1,12 @@
 package io.github.hiwepy.openclaw;
 
+import io.github.hiwepy.openclaw.api.InvokeAgentRequest;
+import io.github.hiwepy.openclaw.api.InvokeAgentResult;
+import io.github.hiwepy.openclaw.api.OpenClawClient;
+import io.github.hiwepy.openclaw.api.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.api.OpenClawGatewayHttpClient;
+import io.github.hiwepy.openclaw.api.OpenClawSessionKeys;
+
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -9,9 +16,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * {@link OpenClawGatewayHttpClient} 响应解析单元测试（无需真实 Gateway）。
- */
 class OpenClawGatewayHttpClientTest {
 
     @Test
@@ -45,20 +49,10 @@ class OpenClawGatewayHttpClientTest {
                 () -> OpenClawGatewayHttpClient.normalizeHookName("../wake"));
     }
 
-    /**
-     * {@link OpenClawGatewayHttpClient#buildHooksAgentBody}：必填 message，可选扩展字段仅在设置时出现。
-     */
     @Test
     void buildHooksAgentBody_includesOptionalFieldsWhenSet() {
-        InvokeAgentRequest r = new InvokeAgentRequest();
-        r.setMessage("hi");
-        r.setAgentId("main");
-        r.setSessionKey("hook:test:1");
-        r.setDeliver(true);
-        r.setChannel("last");
-        r.setTo("user1");
-        r.setModel("openai/gpt-5.5");
-        r.setThinking("off");
+        InvokeAgentRequest r = new InvokeAgentRequest("hi", "main", "Generation", "now", 300,
+                "hook:test:1", true, "last", "user1", "openai/gpt-5.5", "off");
         Map<String, Object> body = OpenClawGatewayHttpClient.buildHooksAgentBody(r);
         assertEquals("hi", body.get("message"));
         assertEquals("main", body.get("agentId"));
@@ -71,13 +65,10 @@ class OpenClawGatewayHttpClientTest {
         assertTrue(body.containsKey("timeoutSeconds"));
     }
 
-    /**
-     * 未设置 agentId 等可选字段时不写入 body。
-     */
     @Test
     void buildHooksAgentBody_omitsUnsetOptionals() {
-        InvokeAgentRequest r = new InvokeAgentRequest();
-        r.setMessage("only");
+        InvokeAgentRequest r = new InvokeAgentRequest("only", null, "Generation", "now", 300,
+                null, null, null, null, null, null);
         Map<String, Object> body = OpenClawGatewayHttpClient.buildHooksAgentBody(r);
         assertFalse(body.containsKey("agentId"));
         assertFalse(body.containsKey("sessionKey"));
@@ -85,8 +76,8 @@ class OpenClawGatewayHttpClientTest {
 
     @Test
     void buildHooksAgentBody_rejectsBlankMessage() {
-        InvokeAgentRequest r = new InvokeAgentRequest();
-        r.setMessage("   ");
-        assertThrows(IllegalArgumentException.class, () -> OpenClawGatewayHttpClient.buildHooksAgentBody(r));
+        InvokeAgentRequest r = new InvokeAgentRequest("main", "   ");
+        assertThrows(IllegalArgumentException.class,
+                () -> OpenClawGatewayHttpClient.buildHooksAgentBody(r));
     }
 }

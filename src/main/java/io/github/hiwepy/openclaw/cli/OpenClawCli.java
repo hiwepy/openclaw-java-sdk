@@ -16,6 +16,9 @@ import java.util.Objects;
  * Gateway 的 RPC 查询场景可优先使用 {@link GatewayCommandOptions.Builder#health(GatewayRpcOptions)} 等，
  * 或使用 {@link #gatewayHealth(GatewayRpcOptions)} 等便捷方法。
  * </p>
+ *
+ * @see <a href="https://docs.openclaw.ai/cli">CLI Reference</a>
+ * @see <a href="https://docs.openclaw.ai/gateway/cli-backends">CLI Backends</a>
  */
 @Getter
 public class OpenClawCli {

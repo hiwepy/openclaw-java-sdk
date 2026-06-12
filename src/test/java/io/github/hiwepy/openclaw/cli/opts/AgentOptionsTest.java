@@ -1,7 +1,7 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
 import io.github.hiwepy.openclaw.util.OpenClawLists;
-import io.github.hiwepy.openclaw.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.api.OpenClawClientConfig;
 import io.github.hiwepy.openclaw.cli.OpenClawCliExecutor;
 import io.github.hiwepy.openclaw.cli.OpenClawCliRequest;
 import org.apache.commons.exec.CommandLine;

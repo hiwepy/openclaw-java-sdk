@@ -1,4 +1,4 @@
-package io.github.hiwepy.openclaw;
+package io.github.hiwepy.openclaw.api;
 
 import java.util.Locale;
 import java.util.Objects;

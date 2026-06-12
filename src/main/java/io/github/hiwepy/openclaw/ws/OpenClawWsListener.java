@@ -7,6 +7,8 @@ import io.github.hiwepy.openclaw.ws.protocol.ResponseFrame;
 /**
  * Gateway WebSocket 事件监听器。
  * <p>实现此接口以接收 Gateway 推送的事件和状态变更。</p>
+ *
+ * @see <a href="https://docs.openclaw.ai/gateway/protocol">Gateway Protocol</a>
  */
 public interface OpenClawWsListener {
 

@@ -4,6 +4,8 @@ package io.github.hiwepy.openclaw.ws;
  * {@code chat.send} 流式回复处理器。
  * <p>Gateway 在处理 {@code chat.send} 时会推送多个 {@code event: "chat"} 事件帧，
  * 其中 {@code delta: true} 表示增量文本，{@code done: true} 表示回复完成。</p>
+ *
+ * @see <a href="https://docs.openclaw.ai/gateway/protocol">Gateway Protocol</a>
  */
 public interface ChatStreamHandler {
 

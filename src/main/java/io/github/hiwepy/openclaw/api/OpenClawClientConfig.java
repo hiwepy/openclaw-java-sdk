@@ -1,4 +1,4 @@
-package io.github.hiwepy.openclaw;
+package io.github.hiwepy.openclaw.api;
 
 import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import lombok.Data;
@@ -14,10 +14,13 @@ import lombok.Data;
  *         {@code x-openclaw-token: &lt;token&gt;}（二选一，由 {@link #hooksUseXOpenclawTokenHeader} 选择），
  *         对应 {@code hooks.token}，<b>不得</b>与 {@code gateway.auth.token} 混用。</li>
  *     <li>{@link #gatewayAuthToken} / {@link #gatewayAuthPassword}：对应控制面凭证（如
- *         {@code gateway.auth.token}、{@code OPENCLAW_GATEWAY_TOKEN} 或密码模式），供 CLI / 未来
- *         WebSocket App SDK 等使用；当前 {@link OpenClawGatewayHttpClient} <b>不</b>读取这两项，
- *         Webhook 调用请勿误填到此类字段。</li>
+ *         {@code gateway.auth.token}、{@code OPENCLAW_GATEWAY_TOKEN} 或密码模式），供 CLI /
+ *         WebSocket 控制面 / OpenAI 兼容 API / Tools Invoke 使用。</li>
  * </ul>
+ *
+ * @see <a href="https://docs.openclaw.ai/gateway/protocol">Gateway Protocol</a>
+ * @see <a href="https://docs.openclaw.ai/gateway/openai-http-api#authentication">OpenAI HTTP API Authentication</a>
+ * @see <a href="https://docs.openclaw.ai/gateway/cli-backends">CLI Backends</a>
  */
 @Data
 public class OpenClawClientConfig {
@@ -113,6 +116,30 @@ public class OpenClawClientConfig {
     }
 
     /**
+     * 解析用于 Gateway <b>控制面</b> HTTP API（{@code /v1/*}、{@code /tools/*}）的 Bearer 令牌。
+     * <p>
+     * 优先级：{@link #gatewayAuthToken} → {@link #gatewayAuthPassword} → {@link #resolveHooksBearerToken()}。
+     * </p>
+     * <p>
+     * 与 Webhook 鉴权不同：OpenAI 兼容 API 和 Tools Invoke 使用 Gateway 控制面凭证
+     * （{@code gateway.auth.token} 或 {@code gateway.auth.password}），
+     * 而非 {@code hooks.token}。
+     * </p>
+     *
+     * @return 控制面 Bearer 令牌，均为空则空字符串
+     * @see <a href="https://docs.openclaw.ai/gateway/openai-http-api#authentication">OpenAI HTTP API Authentication</a>
+     */
+    public String resolveGatewayBearerToken() {
+        if (OpenClawStrings.isNotBlank(gatewayAuthToken)) {
+            return gatewayAuthToken.trim();
+        }
+        if (OpenClawStrings.isNotBlank(gatewayAuthPassword)) {
+            return gatewayAuthPassword.trim();
+        }
+        return resolveHooksBearerToken();
+    }
+
+    /**
      * 与 {@link #resolveHooksBearerToken()} 相同，保留以兼容旧代码。
      *
      * @return Webhook Bearer 令牌
@@ -140,49 +167,4 @@ public class OpenClawClientConfig {
         }
         return raw;
     }
-    // ============================================================
-    // Getters (non-Lombok, explicit for clarity)
-    // ============================================================
-
-    public String getGatewayBaseUrl() { return gatewayBaseUrl; }
-    public void setGatewayBaseUrl(String gatewayBaseUrl) { this.gatewayBaseUrl = gatewayBaseUrl; }
-
-    public String getHooksToken() { return hooksToken; }
-    public void setHooksToken(String hooksToken) { this.hooksToken = hooksToken; }
-
-    public String getApiKey() { return apiKey; }
-    public void setApiKey(String apiKey) { this.apiKey = apiKey; }
-
-    public String getGatewayAuthToken() { return gatewayAuthToken; }
-    public void setGatewayAuthToken(String gatewayAuthToken) { this.gatewayAuthToken = gatewayAuthToken; }
-
-    public String getGatewayAuthPassword() { return gatewayAuthPassword; }
-    public void setGatewayAuthPassword(String gatewayAuthPassword) { this.gatewayAuthPassword = gatewayAuthPassword; }
-
-    public boolean isVerifySsl() { return verifySsl; }
-    public void setVerifySsl(boolean verifySsl) { this.verifySsl = verifySsl; }
-
-    public int getConnectTimeoutMillis() { return connectTimeoutMillis; }
-    public void setConnectTimeoutMillis(int connectTimeoutMillis) { this.connectTimeoutMillis = connectTimeoutMillis; }
-
-    public int getReadTimeoutMillis() { return readTimeoutMillis; }
-    public void setReadTimeoutMillis(int readTimeoutMillis) { this.readTimeoutMillis = readTimeoutMillis; }
-
-    public String getLocalExecutable() { return localExecutable; }
-    public void setLocalExecutable(String localExecutable) { this.localExecutable = localExecutable; }
-
-    public int getLocalTimeoutSeconds() { return localTimeoutSeconds; }
-    public void setLocalTimeoutSeconds(int localTimeoutSeconds) { this.localTimeoutSeconds = localTimeoutSeconds; }
-
-    public String getLocalWorkingDirectory() { return localWorkingDirectory; }
-    public void setLocalWorkingDirectory(String localWorkingDirectory) { this.localWorkingDirectory = localWorkingDirectory; }
-
-    public int getLocalMaxConcurrentExecutions() { return localMaxConcurrentExecutions; }
-    public void setLocalMaxConcurrentExecutions(int localMaxConcurrentExecutions) { this.localMaxConcurrentExecutions = localMaxConcurrentExecutions; }
-
-    public int getLocalProbeTimeoutSeconds() { return localProbeTimeoutSeconds; }
-    public void setLocalProbeTimeoutSeconds(int localProbeTimeoutSeconds) { this.localProbeTimeoutSeconds = localProbeTimeoutSeconds; }
-
-    public boolean isHooksUseXOpenclawTokenHeader() { return hooksUseXOpenclawTokenHeader; }
-    public void setHooksUseXOpenclawTokenHeader(boolean hooksUseXOpenclawTokenHeader) { this.hooksUseXOpenclawTokenHeader = hooksUseXOpenclawTokenHeader; }
 }
