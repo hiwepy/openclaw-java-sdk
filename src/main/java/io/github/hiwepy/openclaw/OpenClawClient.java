@@ -1,12 +1,11 @@
-package io.github.hiwepy.openclaw.api;
+package io.github.hiwepy.openclaw;
 
+import io.github.hiwepy.openclaw.api.*;
 import io.github.hiwepy.openclaw.cli.OpenClawCli;
 import io.github.hiwepy.openclaw.cli.OpenClawCliExecutor;
-import io.github.hiwepy.openclaw.api.OpenClawOpenAiHttpClient;
 import io.github.hiwepy.openclaw.api.model.*;
 import io.github.hiwepy.openclaw.api.model.ResponseRequest;
 import io.github.hiwepy.openclaw.api.model.ResponseResult;
-import io.github.hiwepy.openclaw.api.OpenClawToolsInvokeClient;
 import io.github.hiwepy.openclaw.api.model.ToolInvokeRequest;
 import io.github.hiwepy.openclaw.api.model.ToolInvokeResult;
 import io.github.hiwepy.openclaw.ws.ChatStreamHandler;

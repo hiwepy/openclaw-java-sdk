@@ -1,5 +1,6 @@
-package io.github.hiwepy.openclaw.api;
+package io.github.hiwepy.openclaw;
 
+import io.github.hiwepy.openclaw.api.OpenClawGatewayHttpClient;
 import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import lombok.Data;
 

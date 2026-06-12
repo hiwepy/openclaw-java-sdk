@@ -2,6 +2,7 @@ package io.github.hiwepy.openclaw.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.hiwepy.openclaw.OpenClawClientConfig;
 import io.github.hiwepy.openclaw.exception.OpenClawHttpException;
 import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import kong.unirest.core.HttpResponse;

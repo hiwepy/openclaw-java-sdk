@@ -1,6 +1,6 @@
 package io.github.hiwepy.openclaw.cli;
 
-import io.github.hiwepy.openclaw.api.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.OpenClawClientConfig;
 import io.github.hiwepy.openclaw.cli.support.SubprocessExecutionSupport;
 import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import lombok.extern.slf4j.Slf4j;

@@ -1,6 +1,6 @@
 package io.github.hiwepy.openclaw.cli.availability;
 
-import io.github.hiwepy.openclaw.api.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.OpenClawClientConfig;
 import io.github.hiwepy.openclaw.cli.OpenClawCli;
 import io.github.hiwepy.openclaw.cli.OpenClawCliExecutor;
 import io.github.hiwepy.openclaw.cli.OpenClawCliResult;

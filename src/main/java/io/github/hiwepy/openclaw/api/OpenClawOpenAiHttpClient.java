@@ -2,7 +2,7 @@ package io.github.hiwepy.openclaw.api;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.hiwepy.openclaw.api.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.OpenClawClientConfig;
 import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import io.github.hiwepy.openclaw.exception.OpenClawHttpException;
 import io.github.hiwepy.openclaw.api.model.*;
@@ -12,8 +12,6 @@ import kong.unirest.core.UnirestInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Objects;
 
 /**

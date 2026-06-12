@@ -1,6 +1,6 @@
 package io.github.hiwepy.openclaw.ws;
 
-import io.github.hiwepy.openclaw.api.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.OpenClawClientConfig;
 import io.github.hiwepy.openclaw.ws.protocol.*;
 import io.github.hiwepy.openclaw.ws.protocol.params.SessionsListParams;
 import io.github.hiwepy.openclaw.ws.protocol.result.SessionsListResult;

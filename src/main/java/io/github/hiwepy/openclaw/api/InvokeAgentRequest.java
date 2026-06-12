@@ -1,5 +1,6 @@
 package io.github.hiwepy.openclaw.api;
 
+import io.github.hiwepy.openclaw.OpenClawClient;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

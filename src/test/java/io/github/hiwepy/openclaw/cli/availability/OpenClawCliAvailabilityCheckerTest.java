@@ -1,6 +1,6 @@
 package io.github.hiwepy.openclaw.cli.availability;
 
-import io.github.hiwepy.openclaw.api.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.OpenClawClientConfig;
 import io.github.hiwepy.openclaw.cli.support.MockOpenClawCli;
 import org.junit.jupiter.api.Test;
 

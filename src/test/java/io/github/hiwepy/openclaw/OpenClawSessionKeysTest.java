@@ -3,7 +3,6 @@ package io.github.hiwepy.openclaw;
 import io.github.hiwepy.openclaw.api.InvokeAgentRequest;
 import io.github.hiwepy.openclaw.api.OpenClawGatewayHttpClient;
 import io.github.hiwepy.openclaw.api.OpenClawSessionKeys;
-import io.github.hiwepy.openclaw.api.OpenClawClient;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
