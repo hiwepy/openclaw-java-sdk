@@ -1,37 +1,62 @@
 package io.github.hiwepy.openclaw.api;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
- * 调用 OpenClaw Gateway {@code POST /hooks/agent} 的请求体。
+ * 调用 OpenClaw Gateway {@code POST /hooks/agent} 的请求体，与
+ * <a href="https://docs.openclaw.ai/gateway/configuration-reference">Gateway Hooks 文档</a>一致。
+ * <p>
+ * {@code sessionKey} 仅在网关开启 {@code hooks.allowRequestSessionKey} 且符合
+ * {@code hooks.allowedSessionKeyPrefixes} 等策略时才会被接受；否则网关可能拒绝请求。
+ * </p>
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public record InvokeAgentRequest(
-        @JsonProperty("message") String message,
-        @JsonProperty("agentId") String agentId,
-        @JsonProperty("name") String name,
-        @JsonProperty("wakeMode") String wakeMode,
-        @JsonProperty("timeoutSeconds") Integer timeoutSeconds,
-        @JsonProperty("sessionKey") String sessionKey,
-        @JsonProperty("deliver") Boolean deliver,
-        @JsonProperty("channel") String channel,
-        @JsonProperty("to") String to,
-        @JsonProperty("model") String model,
-        @JsonProperty("thinking") String thinking) {
+@Getter
+@Setter
+@NoArgsConstructor
+public class InvokeAgentRequest {
 
-    public InvokeAgentRequest {
-        if (name == null) name = "Generation";
-        if (wakeMode == null) wakeMode = "now";
-        if (timeoutSeconds == null) timeoutSeconds = 300;
-    }
+    /** 必填：发给 agent 的提示/任务内容 */
+    private String message;
 
+    private String agentId;
+    private String name = "Generation";
+    private String wakeMode = "now";
+    private int timeoutSeconds = 300;
+
+    /**
+     * 会话键；需要网关 {@code hooks.allowRequestSessionKey=true} 等配置配合。
+     * <p>
+     * 推荐通过 {@link OpenClawSessionKeys} 或 {@link OpenClawClient#agentWithStableSession} /
+     * {@link OpenClawClient#agentOneShotForPeer} / {@link OpenClawClient#agentOneShot} 设置，而非手写字符串。
+     * </p>
+     */
+    private String sessionKey;
+
+    /**
+     * 为 {@code true} 时将最终回复投递到通道；{@code null} 表示不在 JSON 中发送该字段（使用网关默认）。
+     */
+    private Boolean deliver;
+
+    /** 投递目标通道，常与 {@link #deliver} 配合；例如文档中的 {@code last} */
+    private String channel;
+
+    /** 投递目标标识（如收件人），文档字段 {@code to} */
+    private String to;
+
+    /** 模型覆盖，形如 {@code openai/gpt-5.5} 或网关允许的其他 ref */
+    private String model;
+
+    /** 思考等级或开关，如文档示例 {@code off} */
+    private String thinking;
+
+    /**
+     * @param agentId 路由 agent
+     * @param message 发给 agent 的提示/任务内容
+     */
     public InvokeAgentRequest(String agentId, String message) {
-        this(message, agentId, "Generation", "now", 300, null, null, null, null, null, null);
-    }
-
-    public InvokeAgentRequest withSessionKey(String sessionKey) {
-        return new InvokeAgentRequest(message, agentId, name, wakeMode, timeoutSeconds,
-                sessionKey, deliver, channel, to, model, thinking);
+        this.agentId = agentId;
+        this.message = message;
     }
 }

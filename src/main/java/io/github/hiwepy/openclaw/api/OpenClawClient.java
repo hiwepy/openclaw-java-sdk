@@ -124,19 +124,20 @@ public class OpenClawClient implements AutoCloseable {
     }
 
     public InvokeAgentResult agentOneShotForPeer(String peerId, InvokeAgentRequest request) {
-        return agent(request.withSessionKey(OpenClawSessionKeys.forEphemeralPeer(peerId)));
+        request.setSessionKey(OpenClawSessionKeys.forEphemeralPeer(peerId));
+        return agent(request);
     }
 
     public InvokeAgentResult agentOneShotForPeer(String peerId, String correlationId,
                                                   InvokeAgentRequest request) {
-        return agent(request.withSessionKey(
-                OpenClawSessionKeys.forEphemeralPeer(peerId, correlationId)));
+        request.setSessionKey(OpenClawSessionKeys.forEphemeralPeer(peerId, correlationId));
+        return agent(request);
     }
 
     public InvokeAgentResult agentWithStableSession(String agentId, String peerId,
                                                      InvokeAgentRequest request) {
-        return agent(request.withSessionKey(
-                OpenClawSessionKeys.forStableSession(agentId, peerId)));
+        request.setSessionKey(OpenClawSessionKeys.forStableSession(agentId, peerId));
+        return agent(request);
     }
 
     public String wake(String text, String mode) {
@@ -302,6 +303,18 @@ public class OpenClawClient implements AutoCloseable {
      * to change the sessionKey.
      */
     public static InvokeAgentRequest copyRequest(InvokeAgentRequest request) {
-        return request;
+        InvokeAgentRequest copy = new InvokeAgentRequest();
+        copy.setMessage(request.getMessage());
+        copy.setAgentId(request.getAgentId());
+        copy.setName(request.getName());
+        copy.setWakeMode(request.getWakeMode());
+        copy.setTimeoutSeconds(request.getTimeoutSeconds());
+        copy.setSessionKey(request.getSessionKey());
+        copy.setDeliver(request.getDeliver());
+        copy.setChannel(request.getChannel());
+        copy.setTo(request.getTo());
+        copy.setModel(request.getModel());
+        copy.setThinking(request.getThinking());
+        return copy;
     }
 }

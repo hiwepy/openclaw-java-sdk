@@ -98,7 +98,8 @@ public class OpenClawOpenAiHttpClient implements AutoCloseable {
                                      SseEventHandler handler) {
         Objects.requireNonNull(request, "request");
         Objects.requireNonNull(handler, "handler");
-        httpClient.postStream("/v1/chat/completions", request.withStream(), headers, handler,
+        request.setStream(true);
+        httpClient.postStream("/v1/chat/completions", request, headers, handler,
                 ChatCompletionChunk.class);
     }
 
@@ -111,7 +112,8 @@ public class OpenClawOpenAiHttpClient implements AutoCloseable {
                                      SseEventHandler handler) {
         Objects.requireNonNull(request, "request");
         Objects.requireNonNull(handler, "handler");
-        httpClient.postStream("/v1/responses", request.withStream(), headers, handler, null);
+        request.setStream(true);
+        httpClient.postStream("/v1/responses", request, headers, handler, null);
     }
 
     public void createResponseStream(ResponseRequest request, SseEventHandler handler) {

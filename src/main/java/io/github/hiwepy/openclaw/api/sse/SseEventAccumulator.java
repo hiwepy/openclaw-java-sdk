@@ -10,120 +10,97 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Accumulates SSE streaming delta chunks into a complete response.
- *
- * <pre>{@code
- * SseEventAccumulator acc = new SseEventAccumulator();
- * client.chatCompletionStream(req, new SseEventHandler() {
- *     public void onEvent(SseEvent event) {
- *         ChatCompletionChunk chunk = (ChatCompletionChunk) event.parsed();
- *         if (chunk != null) acc.merge(chunk);
- *     }
- *     public void onComplete() {
- *         ChatCompletionChunk full = acc.getAccumulated();
- *     }
- *     public void onError(Throwable error) { ... }
- * });
- * }</pre>
- */
 public class SseEventAccumulator {
 
     private String id;
-    private String object;
-    private Long created;
     private String model;
     private String role;
     private final StringBuilder contentBuilder = new StringBuilder();
-    private final Map<Integer, ToolCallAccumulator> toolCallsByIndex = new LinkedHashMap<>();
+    private final Map<Integer, ToolPart> toolParts = new LinkedHashMap<>();
     private String finishReason;
 
     public void merge(ChatCompletionChunk chunk) {
-        if (chunk.id() != null) this.id = chunk.id();
-        if (chunk.object() != null) this.object = chunk.object();
-        if (chunk.created() != null) this.created = chunk.created();
-        if (chunk.model() != null) this.model = chunk.model();
+        if (chunk.getId() != null) this.id = chunk.getId();
+        if (chunk.getModel() != null) this.model = chunk.getModel();
+        if (chunk.getChoices() == null || chunk.getChoices().isEmpty()) return;
 
-        if (chunk.choices() == null || chunk.choices().isEmpty()) return;
-
-        DeltaChoice choice = chunk.choices().get(0);
-        DeltaMessage delta = choice.delta();
-        if (choice.finishReason() != null) this.finishReason = choice.finishReason();
+        DeltaChoice choice = chunk.getChoices().get(0);
+        DeltaMessage delta = choice.getDelta();
+        if (choice.getFinishReason() != null) this.finishReason = choice.getFinishReason();
         if (delta == null) return;
 
-        if (delta.role() != null) this.role = delta.role();
-        if (delta.content() != null) contentBuilder.append(delta.content());
+        if (delta.getRole() != null) this.role = delta.getRole();
+        if (delta.getContent() != null) contentBuilder.append(delta.getContent());
 
-        if (delta.toolCalls() != null) {
-            for (int i = 0; i < delta.toolCalls().size(); i++) {
-                ChatCompletionMessage.ToolCall tc = delta.toolCalls().get(i);
-                ToolCallAccumulator tca = toolCallsByIndex.computeIfAbsent(i,
-                        k -> new ToolCallAccumulator());
-                tca.merge(tc);
+        if (delta.getToolCalls() != null) {
+            for (int i = 0; i < delta.getToolCalls().size(); i++) {
+                ChatCompletionMessage.ToolCall tc = delta.getToolCalls().get(i);
+                ToolPart tp = toolParts.computeIfAbsent(i, k -> new ToolPart());
+                tp.merge(tc);
             }
         }
     }
 
     public ChatCompletionChunk getAccumulated() {
-        List<ChatCompletionMessage.ToolCall> mergedTools = null;
-        if (!toolCallsByIndex.isEmpty()) {
-            mergedTools = new ArrayList<>();
-            for (ToolCallAccumulator tca : toolCallsByIndex.values()) {
-                mergedTools.add(tca.build());
+        ChatCompletionChunk result = new ChatCompletionChunk();
+        result.setId(id);
+        result.setModel(model);
+
+        DeltaMessage delta = new DeltaMessage();
+        delta.setRole(role);
+        delta.setContent(contentBuilder.length() > 0 ? contentBuilder.toString() : null);
+
+        if (!toolParts.isEmpty()) {
+            List<ChatCompletionMessage.ToolCall> merged = new ArrayList<>();
+            for (ToolPart tp : toolParts.values()) {
+                merged.add(tp.build());
             }
+            delta.setToolCalls(merged);
         }
 
-        DeltaMessage delta = new DeltaMessage(role,
-                contentBuilder.length() > 0 ? contentBuilder.toString() : null,
-                mergedTools);
+        DeltaChoice choice = new DeltaChoice();
+        choice.setIndex(0);
+        choice.setDelta(delta);
+        choice.setFinishReason(finishReason);
 
-        DeltaChoice choice = new DeltaChoice(0, delta, finishReason);
-
-        return new ChatCompletionChunk(id, object, created, model,
-                List.of(choice), null);
+        result.setChoices(List.of(choice));
+        return result;
     }
 
-    public boolean isToolCall() {
-        return "tool_calls".equals(finishReason);
-    }
-
-    public boolean isComplete() {
-        return finishReason != null;
-    }
-
-    public String getAccumulatedContent() {
-        return contentBuilder.toString();
-    }
+    public boolean isToolCall() { return "tool_calls".equals(finishReason); }
+    public boolean isComplete() { return finishReason != null; }
+    public String getAccumulatedContent() { return contentBuilder.toString(); }
 
     public void reset() {
-        id = null;
-        object = null;
-        created = null;
-        model = null;
-        role = null;
+        id = null; model = null; role = null;
         contentBuilder.setLength(0);
-        toolCallsByIndex.clear();
+        toolParts.clear();
         finishReason = null;
     }
 
-    private static class ToolCallAccumulator {
-        private String id;
-        private String type;
-        private String name;
+    private static class ToolPart {
+        private String id, type, name;
         private final StringBuilder arguments = new StringBuilder();
 
         void merge(ChatCompletionMessage.ToolCall tc) {
-            if (tc.id() != null) this.id = tc.id();
-            if (tc.type() != null) this.type = tc.type();
-            if (tc.function() != null) {
-                if (tc.function().name() != null) this.name = tc.function().name();
-                if (tc.function().arguments() != null) this.arguments.append(tc.function().arguments());
+            if (tc.getId() != null) this.id = tc.getId();
+            if (tc.getType() != null) this.type = tc.getType();
+            if (tc.getFunction() != null) {
+                if (tc.getFunction().getName() != null) this.name = tc.getFunction().getName();
+                if (tc.getFunction().getArguments() != null) this.arguments.append(tc.getFunction().getArguments());
             }
         }
 
         ChatCompletionMessage.ToolCall build() {
-            return new ChatCompletionMessage.ToolCall(id, type != null ? type : "function",
-                    new ChatCompletionMessage.FunctionCall(name, arguments.toString()), null);
+            ChatCompletionMessage.FunctionCall fn = new ChatCompletionMessage.FunctionCall();
+            fn.setName(name);
+            fn.setArguments(arguments.toString());
+
+            ChatCompletionMessage.ToolCall tc = new ChatCompletionMessage.ToolCall();
+            tc.setId(id);
+            tc.setType(type != null ? type : "function");
+            tc.setFunction(fn);
+            return tc;
         }
     }
 }

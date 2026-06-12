@@ -85,7 +85,7 @@ public class SseStreamReader {
                     if (chunkClass != null) {
                         try {
                             T chunk = objectMapper.readValue(data, chunkClass);
-                            sseEvent = sseEvent.withParsed(chunk);
+                            sseEvent.setParsed(chunk);
                         } catch (Exception parseEx) {
                             log.debug("Failed to parse SSE data as {}: {}", chunkClass.getSimpleName(), parseEx.getMessage());
                         }

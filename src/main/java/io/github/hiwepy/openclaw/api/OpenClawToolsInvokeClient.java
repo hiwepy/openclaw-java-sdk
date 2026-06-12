@@ -37,16 +37,20 @@ public class OpenClawToolsInvokeClient implements AutoCloseable {
 
     public ToolInvokeResult invoke(ToolInvokeRequest request) {
         Objects.requireNonNull(request, "request");
-        if (OpenClawStrings.isBlank(request.tool())) {
+        if (OpenClawStrings.isBlank(request.getTool())) {
             throw new IllegalArgumentException("tool name is required");
         }
         return httpClient.postJsonWithStatusHandling("/tools/invoke", request, null,
                 ToolInvokeResult.class,
                 (status, body) -> {
                     if (status == 404) {
-                        return new ToolInvokeResult(false, null,
-                                new ToolInvokeResult.ErrorDetail("not_found",
-                                        "Tool not available: " + request.tool()));
+                        ToolInvokeResult r = new ToolInvokeResult();
+                        r.setOk(false);
+                        ToolInvokeResult.ErrorDetail err = new ToolInvokeResult.ErrorDetail();
+                        err.setType("not_found");
+                        err.setMessage("Tool not available: " + request.getTool());
+                        r.setError(err);
+                        return r;
                     }
                     return null;
                 });

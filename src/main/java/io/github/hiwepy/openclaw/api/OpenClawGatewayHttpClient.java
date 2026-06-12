@@ -44,7 +44,12 @@ public class OpenClawGatewayHttpClient implements AutoCloseable {
         Objects.requireNonNull(request, "request");
         Map<String, Object> body = buildHooksAgentBody(request);
         String respBody = httpClient.postJsonRaw(resolveHooksSubPath("agent"), body, null);
-        return InvokeAgentResult.http(200, respBody, parseOk(respBody), parseRunId(respBody));
+        InvokeAgentResult result = new InvokeAgentResult();
+        result.setHttpStatus(200);
+        result.setRawBody(respBody);
+        result.setSuccess(parseOk(respBody));
+        result.setRunId(parseRunId(respBody));
+        return result;
     }
 
     // ============================================================
@@ -77,21 +82,21 @@ public class OpenClawGatewayHttpClient implements AutoCloseable {
 
     public static Map<String, Object> buildHooksAgentBody(InvokeAgentRequest request) {
         Objects.requireNonNull(request, "request");
-        if (OpenClawStrings.isBlank(request.message())) {
+        if (OpenClawStrings.isBlank(request.getMessage())) {
             throw new IllegalArgumentException("hooks/agent: message is required");
         }
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("message", request.message());
-        OpenClawStrings.putIfNotBlank(body, "agentId", request.agentId());
-        body.put("name", OpenClawStrings.isNotBlank(request.name()) ? request.name() : "Generation");
-        body.put("wakeMode", OpenClawStrings.isNotBlank(request.wakeMode()) ? request.wakeMode() : "now");
-        body.put("timeoutSeconds", request.timeoutSeconds() != null ? request.timeoutSeconds() : 300);
-        OpenClawStrings.putIfNotBlank(body, "sessionKey", request.sessionKey());
-        if (request.deliver() != null) body.put("deliver", request.deliver());
-        OpenClawStrings.putIfNotBlank(body, "channel", request.channel());
-        OpenClawStrings.putIfNotBlank(body, "to", request.to());
-        OpenClawStrings.putIfNotBlank(body, "model", request.model());
-        OpenClawStrings.putIfNotBlank(body, "thinking", request.thinking());
+        body.put("message", request.getMessage());
+        OpenClawStrings.putIfNotBlank(body, "agentId", request.getAgentId());
+        body.put("name", OpenClawStrings.isNotBlank(request.getName()) ? request.getName() : "Generation");
+        body.put("wakeMode", OpenClawStrings.isNotBlank(request.getWakeMode()) ? request.getWakeMode() : "now");
+        body.put("timeoutSeconds", request.getTimeoutSeconds());
+        OpenClawStrings.putIfNotBlank(body, "sessionKey", request.getSessionKey());
+        if (request.getDeliver() != null) body.put("deliver", request.getDeliver());
+        OpenClawStrings.putIfNotBlank(body, "channel", request.getChannel());
+        OpenClawStrings.putIfNotBlank(body, "to", request.getTo());
+        OpenClawStrings.putIfNotBlank(body, "model", request.getModel());
+        OpenClawStrings.putIfNotBlank(body, "thinking", request.getThinking());
         return body;
     }
 

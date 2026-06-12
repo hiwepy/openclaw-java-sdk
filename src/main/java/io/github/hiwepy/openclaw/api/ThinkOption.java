@@ -22,34 +22,34 @@ import java.util.List;
  */
 @JsonSerialize(using = ThinkOption.ThinkOptionSerializer.class)
 @JsonDeserialize(using = ThinkOption.ThinkOptionDeserializer.class)
-public sealed interface ThinkOption {
+public interface ThinkOption {
 
     Object toJsonValue();
 
     /** Boolean-style think for models supporting simple enable/disable. */
-    record ThinkBoolean(boolean enabled) implements ThinkOption {
+    static class ThinkBoolean implements ThinkOption {
         public static final ThinkBoolean ENABLED = new ThinkBoolean(true);
         public static final ThinkBoolean DISABLED = new ThinkBoolean(false);
-
-        @Override
-        public Object toJsonValue() { return enabled; }
+        private final boolean enabled;
+        public ThinkBoolean(boolean enabled) { this.enabled = enabled; }
+        public boolean isEnabled() { return enabled; }
+        @Override public Object toJsonValue() { return enabled; }
     }
 
     /** String-level think for GPT-OSS model. */
-    record ThinkLevel(String level) implements ThinkOption {
+    static class ThinkLevel implements ThinkOption {
         private static final List<String> VALID = List.of("low", "medium", "high");
         public static final ThinkLevel LOW = new ThinkLevel("low");
         public static final ThinkLevel MEDIUM = new ThinkLevel("medium");
         public static final ThinkLevel HIGH = new ThinkLevel("high");
-
-        public ThinkLevel {
-            if (level != null && !VALID.contains(level)) {
+        private final String level;
+        public ThinkLevel(String level) {
+            if (level != null && !VALID.contains(level))
                 throw new IllegalArgumentException("think level must be one of " + VALID + ", got: " + level);
-            }
+            this.level = level;
         }
-
-        @Override
-        public Object toJsonValue() { return level; }
+        public String getLevel() { return level; }
+        @Override public Object toJsonValue() { return level; }
     }
 
     class ThinkOptionSerializer extends JsonSerializer<ThinkOption> {
