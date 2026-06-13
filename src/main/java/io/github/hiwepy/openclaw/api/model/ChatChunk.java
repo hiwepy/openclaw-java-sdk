@@ -33,7 +33,7 @@ import java.util.List;
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ChatCompletionChunk {
+public class ChatChunk {
 
     /** 响应唯一标识。 */
     private String id;
@@ -95,6 +95,6 @@ public class ChatCompletionChunk {
         private String content;
         /** 工具调用增量（用于流式传递工具标识和参数片段）。 */
         @JsonProperty("tool_calls")
-        private List<ChatCompletionMessage.ToolCall> toolCalls;
+        private List<ChatMessage.ToolCall> toolCalls;
     }
 }

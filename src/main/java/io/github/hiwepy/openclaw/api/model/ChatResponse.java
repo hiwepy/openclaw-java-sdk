@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * OpenAI Chat Completions API 非流式响应。
@@ -33,7 +32,7 @@ import java.util.Map;
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ChatCompletionResponse {
+public class ChatResponse {
 
     /** 响应唯一标识。 */
     private String id;
@@ -72,7 +71,7 @@ public class ChatCompletionResponse {
          * 此消息的 {@code toolCalls} 包含工具调用列表，
          * {@code content} 可能为空字符串（表示 agent 在调用工具前无附加说明）。</p>
          */
-        private ChatCompletionMessage message;
+        private ChatMessage message;
 
         /**
          * 完成原因。

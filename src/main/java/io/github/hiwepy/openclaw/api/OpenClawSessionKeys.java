@@ -22,7 +22,8 @@ import java.util.regex.Pattern;
  */
 public final class OpenClawSessionKeys {
 
-    private static final Pattern SAFE_SEGMENT = Pattern.compile("^[a-z0-9][a-z0-9._-]{0,127}$");
+    /** 允许字母/数字开头，支持大小写字母、数字、下划线、点、破折号，最长128字节 */
+    private static final Pattern SAFE_SEGMENT = Pattern.compile("^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$");
 
     private OpenClawSessionKeys() {
     }

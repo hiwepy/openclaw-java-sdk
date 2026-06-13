@@ -58,7 +58,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @see <a href="https://docs.openclaw.ai/gateway/bridge-protocol">Bridge Protocol (legacy)</a>
  */
 @Slf4j
-public class OpenClawGatewayWsClient extends WebSocketClient {
+public class OpenClawGatewayWsClient extends WebSocketClient implements AutoCloseable {
 
     private static final int PROTOCOL_VERSION = 1;
 
@@ -85,6 +85,14 @@ public class OpenClawGatewayWsClient extends WebSocketClient {
 
     /** 每次连接尝试单独一个 Future，重连时替换 */
     private volatile CompletableFuture<HelloOk> connectFuture = new CompletableFuture<>();
+
+    /** 共享的挑战等待调度器（单线程，避免每次连接创建新线程池） */
+    private final ScheduledExecutorService challengeScheduler =
+            Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "openclaw-ws-challenge");
+                t.setDaemon(true);
+                return t;
+            });
 
     // ============================================================
     // 构造
@@ -138,9 +146,8 @@ public class OpenClawGatewayWsClient extends WebSocketClient {
     public void onOpen(ServerHandshake handshake) {
         log.info("WebSocket connected to {}, waiting for connect.challenge or timeout", getURI());
         challengeNonce.set(null);
-        // 启动挑战等待线程：超时后直接发送 connect（兼容旧版 Gateway）
-        java.util.concurrent.ScheduledExecutorService scheduler = java.util.concurrent.Executors.newSingleThreadScheduledExecutor();
-        scheduler.schedule(() -> {
+        // 使用共享的调度器：超时后直接发送 connect（兼容旧版 Gateway）
+        challengeScheduler.schedule(() -> {
                     if (!connectFuture.isDone()) {
                         String nonce = challengeNonce.get();
                         if (nonce == null) {
@@ -149,7 +156,6 @@ public class OpenClawGatewayWsClient extends WebSocketClient {
                         sendConnectHandshake();
                     }
                 }, CHALLENGE_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-        scheduler.shutdown();
     }
 
     @Override
@@ -377,6 +383,11 @@ public class OpenClawGatewayWsClient extends WebSocketClient {
 
     @Override
     public void close() {
+        // 安全关闭调度器（防重复关闭）
+        try {
+            challengeScheduler.shutdownNow();
+        } catch (Exception ignored) {
+        }
         failConnectFuture(new CancellationException("Closed by client"));
         helloOkRef.set(null);
         super.close();
@@ -720,7 +731,9 @@ public class OpenClawGatewayWsClient extends WebSocketClient {
                     .orElse(null);
         }
 
-        if (collector == null) return;
+        if (collector == null) {
+            return;
+        }
 
         if (delta != null) {
             collector.textBuilder.append(delta);

@@ -9,9 +9,10 @@ import io.github.hiwepy.openclaw.api.model.*;
 import kong.unirest.core.HttpResponse;
 import kong.unirest.core.Unirest;
 import kong.unirest.core.UnirestInstance;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
@@ -40,9 +41,8 @@ import java.util.Objects;
  * @see <a href="https://docs.openclaw.ai/gateway/openai-http-api">OpenAI Chat Completions</a>
  * @see <a href="https://docs.openclaw.ai/gateway/openresponses-http-api">OpenResponses API</a>
  */
-public class OpenClawOpenAiHttpClient  {
-
-    private static final Logger log = LoggerFactory.getLogger(OpenClawOpenAiHttpClient.class);
+@Slf4j
+public class OpenClawOpenAiHttpClient implements AutoCloseable {
 
     private final OpenClawClientConfig config;
     private final ObjectMapper objectMapper;
@@ -78,11 +78,11 @@ public class OpenClawOpenAiHttpClient  {
      * @param request 请求体
      * @return 解析后的响应
      */
-    public ChatCompletionResponse chatCompletion(ChatCompletionRequest request) {
+    public ChatResponse chatCompletion(ChatRequest request) {
         Objects.requireNonNull(request, "request");
         String responseBody = postJson("/v1/chat/completions", request);
         try {
-            return objectMapper.readValue(responseBody, ChatCompletionResponse.class);
+            return objectMapper.readValue(responseBody, ChatResponse.class);
         } catch (Exception e) {
             throw new OpenClawHttpException("Failed to parse chat completion response: " + e.getMessage(), e);
         }
@@ -122,7 +122,14 @@ public class OpenClawOpenAiHttpClient  {
      */
     public ModelsResponse.ModelData getModel(String modelId) {
         Objects.requireNonNull(modelId, "modelId");
-        String responseBody = getJson("/v1/models/" + modelId);
+        String encodedId;
+        try {
+            encodedId = URLEncoder.encode(modelId, StandardCharsets.UTF_8.name())
+                    .replace("+", "%20");
+        } catch (Exception e) {
+            throw new OpenClawHttpException("Failed to encode modelId: " + modelId, e);
+        }
+        String responseBody = getJson("/v1/models/" + encodedId);
         try {
             return objectMapper.readValue(responseBody, ModelsResponse.ModelData.class);
         } catch (Exception e) {
@@ -189,7 +196,7 @@ public class OpenClawOpenAiHttpClient  {
      */
     private String postJson(String path, Object body) {
         String url = resolveUrl(path);
-        String token = config.resolveHooksBearerToken();
+        String token = config.resolveGatewayBearerToken();
         try {
             String json = objectMapper.writeValueAsString(body);
             log.debug("POST {} bodyLen={}", url, json.length());
@@ -220,7 +227,7 @@ public class OpenClawOpenAiHttpClient  {
      */
     private String getJson(String path) {
         String url = resolveUrl(path);
-        String token = config.resolveHooksBearerToken();
+        String token = config.resolveGatewayBearerToken();
         try {
             kong.unirest.core.GetRequest req = http.get(url);
             if (OpenClawStrings.isNotBlank(token)) {

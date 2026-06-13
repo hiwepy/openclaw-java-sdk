@@ -23,7 +23,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ChatCompletionMessage {
+public class ChatMessage {
 
     /**
      * 消息角色。

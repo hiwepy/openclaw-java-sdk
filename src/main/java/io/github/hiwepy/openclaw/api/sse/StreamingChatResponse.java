@@ -1,11 +1,11 @@
 package io.github.hiwepy.openclaw.api.sse;
 
-import io.github.hiwepy.openclaw.api.model.ChatCompletionChunk;
+import io.github.hiwepy.openclaw.api.model.ChatChunk;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-public class StreamingChatResponse extends CompletableFuture<ChatCompletionChunk>
+public class StreamingChatResponse extends CompletableFuture<ChatChunk>
         implements SseEventHandler {
 
     private final SseEventAccumulator accumulator = new SseEventAccumulator();
@@ -19,12 +19,14 @@ public class StreamingChatResponse extends CompletableFuture<ChatCompletionChunk
     @Override
     public void onEvent(SseEvent event) {
         if (event.isTerminal()) return;
-        Object p = event.getParsed(); ChatCompletionChunk chunk = p instanceof ChatCompletionChunk ? (ChatCompletionChunk) p : null;
-        if (chunk == null) return;
+        Object p = event.getParsed(); ChatChunk chunk = p instanceof ChatChunk ? (ChatChunk) p : null;
+        if (chunk == null) {
+            return;
+        }
         accumulator.merge(chunk);
         if (deltaConsumer != null && chunk.getChoices() != null && !chunk.getChoices().isEmpty()) {
-            ChatCompletionChunk.DeltaChoice choice = chunk.getChoices().get(0);
-            ChatCompletionChunk.DeltaMessage delta = choice.getDelta();
+            ChatChunk.DeltaChoice choice = chunk.getChoices().get(0);
+            ChatChunk.DeltaMessage delta = choice.getDelta();
             if (delta != null && delta.getContent() != null) {
                 deltaConsumer.accept(delta.getContent());
             }

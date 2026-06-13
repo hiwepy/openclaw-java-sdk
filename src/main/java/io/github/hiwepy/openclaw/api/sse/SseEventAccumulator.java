@@ -1,9 +1,9 @@
 package io.github.hiwepy.openclaw.api.sse;
 
-import io.github.hiwepy.openclaw.api.model.ChatCompletionChunk;
-import io.github.hiwepy.openclaw.api.model.ChatCompletionChunk.DeltaChoice;
-import io.github.hiwepy.openclaw.api.model.ChatCompletionChunk.DeltaMessage;
-import io.github.hiwepy.openclaw.api.model.ChatCompletionMessage;
+import io.github.hiwepy.openclaw.api.model.ChatChunk;
+import io.github.hiwepy.openclaw.api.model.ChatChunk.DeltaChoice;
+import io.github.hiwepy.openclaw.api.model.ChatChunk.DeltaMessage;
+import io.github.hiwepy.openclaw.api.model.ChatMessage;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -19,30 +19,44 @@ public class SseEventAccumulator {
     private final Map<Integer, ToolPart> toolParts = new LinkedHashMap<>();
     private String finishReason;
 
-    public void merge(ChatCompletionChunk chunk) {
-        if (chunk.getId() != null) this.id = chunk.getId();
-        if (chunk.getModel() != null) this.model = chunk.getModel();
-        if (chunk.getChoices() == null || chunk.getChoices().isEmpty()) return;
+    public void merge(ChatChunk chunk) {
+        if (chunk.getId() != null) {
+            this.id = chunk.getId();
+        }
+        if (chunk.getModel() != null) {
+            this.model = chunk.getModel();
+        }
+        if (chunk.getChoices() == null || chunk.getChoices().isEmpty()) {
+            return;
+        }
 
         DeltaChoice choice = chunk.getChoices().get(0);
         DeltaMessage delta = choice.getDelta();
-        if (choice.getFinishReason() != null) this.finishReason = choice.getFinishReason();
-        if (delta == null) return;
+        if (choice.getFinishReason() != null) {
+            this.finishReason = choice.getFinishReason();
+        }
+        if (delta == null) {
+            return;
+        }
 
-        if (delta.getRole() != null) this.role = delta.getRole();
-        if (delta.getContent() != null) contentBuilder.append(delta.getContent());
+        if (delta.getRole() != null) {
+            this.role = delta.getRole();
+        }
+        if (delta.getContent() != null) {
+            contentBuilder.append(delta.getContent());
+        }
 
         if (delta.getToolCalls() != null) {
             for (int i = 0; i < delta.getToolCalls().size(); i++) {
-                ChatCompletionMessage.ToolCall tc = delta.getToolCalls().get(i);
+                ChatMessage.ToolCall tc = delta.getToolCalls().get(i);
                 ToolPart tp = toolParts.computeIfAbsent(i, k -> new ToolPart());
                 tp.merge(tc);
             }
         }
     }
 
-    public ChatCompletionChunk getAccumulated() {
-        ChatCompletionChunk result = new ChatCompletionChunk();
+    public ChatChunk getAccumulated() {
+        ChatChunk result = new ChatChunk();
         result.setId(id);
         result.setModel(model);
 
@@ -51,7 +65,7 @@ public class SseEventAccumulator {
         delta.setContent(contentBuilder.length() > 0 ? contentBuilder.toString() : null);
 
         if (!toolParts.isEmpty()) {
-            List<ChatCompletionMessage.ToolCall> merged = new ArrayList<>();
+            List<ChatMessage.ToolCall> merged = new ArrayList<>();
             for (ToolPart tp : toolParts.values()) {
                 merged.add(tp.build());
             }
@@ -82,21 +96,25 @@ public class SseEventAccumulator {
         private String id, type, name;
         private final StringBuilder arguments = new StringBuilder();
 
-        void merge(ChatCompletionMessage.ToolCall tc) {
-            if (tc.getId() != null) this.id = tc.getId();
-            if (tc.getType() != null) this.type = tc.getType();
+        void merge(ChatMessage.ToolCall tc) {
+            if (tc.getId() != null) {
+                this.id = tc.getId();
+            }
+            if (tc.getType() != null) {
+                this.type = tc.getType();
+            }
             if (tc.getFunction() != null) {
                 if (tc.getFunction().getName() != null) this.name = tc.getFunction().getName();
                 if (tc.getFunction().getArguments() != null) this.arguments.append(tc.getFunction().getArguments());
             }
         }
 
-        ChatCompletionMessage.ToolCall build() {
-            ChatCompletionMessage.FunctionCall fn = new ChatCompletionMessage.FunctionCall();
+        ChatMessage.ToolCall build() {
+            ChatMessage.FunctionCall fn = new ChatMessage.FunctionCall();
             fn.setName(name);
             fn.setArguments(arguments.toString());
 
-            ChatCompletionMessage.ToolCall tc = new ChatCompletionMessage.ToolCall();
+            ChatMessage.ToolCall tc = new ChatMessage.ToolCall();
             tc.setId(id);
             tc.setType(type != null ? type : "function");
             tc.setFunction(fn);

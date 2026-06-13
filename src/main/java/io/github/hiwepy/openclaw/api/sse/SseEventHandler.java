@@ -1,5 +1,7 @@
 package io.github.hiwepy.openclaw.api.sse;
 
+import io.github.hiwepy.openclaw.api.model.ChatChunk;
+
 /**
  * SSE 流式事件处理器。
  * <p>
@@ -44,7 +46,7 @@ public interface SseEventHandler {
     /**
      * 收到一个 SSE 事件。
      * <p>
-     * 对于 Chat Completions 流，{@code event.getParsed()} 包含 {@link io.github.hiwepy.openclaw.api.model.ChatCompletionChunk}。
+     * 对于 Chat Completions 流，{@code event.getParsed()} 包含 {@link ChatChunk}。
      * 对于 OpenResponses 流，{@code event.getEvent()} 包含事件类型（如 {@code response.output_text.delta}）。
      * </p>
      *

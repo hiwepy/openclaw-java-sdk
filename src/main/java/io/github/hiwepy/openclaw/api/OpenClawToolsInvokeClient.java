@@ -10,8 +10,7 @@ import io.github.hiwepy.openclaw.api.model.ToolInvokeResult;
 import kong.unirest.core.HttpResponse;
 import kong.unirest.core.Unirest;
 import kong.unirest.core.UnirestInstance;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Objects;
 
@@ -37,9 +36,8 @@ import java.util.Objects;
  *
  * @see <a href="https://docs.openclaw.ai/gateway/tools-invoke-http-api">Tools Invoke API</a>
  */
-public class OpenClawToolsInvokeClient  {
-
-    private static final Logger log = LoggerFactory.getLogger(OpenClawToolsInvokeClient.class);
+@Slf4j
+public class OpenClawToolsInvokeClient implements AutoCloseable {
 
     private final OpenClawClientConfig config;
     private final ObjectMapper objectMapper;
@@ -72,7 +70,7 @@ public class OpenClawToolsInvokeClient  {
         }
 
         String url = config.getGatewayBaseUrl().replaceAll("/+$", "") + "/tools/invoke";
-        String token = config.resolveHooksBearerToken();
+        String token = config.resolveGatewayBearerToken();
         try {
             String json = objectMapper.writeValueAsString(request);
             log.debug("POST /tools/invoke tool={} bodyLen={}", request.getTool(), json.length());

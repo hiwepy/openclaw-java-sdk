@@ -30,7 +30,7 @@ import java.util.Map;
 @Setter
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ChatCompletionRequest {
+public class ChatRequest {
 
     /**
      * Agent 目标标识。
@@ -42,7 +42,7 @@ public class ChatCompletionRequest {
     /**
      * 消息数组。按 OpenAI 标准格式，支持 {@code system}、{@code user}、{@code assistant}、{@code tool} 角色。
      */
-    private List<ChatCompletionMessage> messages;
+    private List<ChatMessage> messages;
 
     /**
      * 是否启用 SSE 流式响应。

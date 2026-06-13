@@ -37,14 +37,14 @@ config.
         OpenClawClient client = new OpenClawClient(config);
 
         // 3. 调用
-        ChatCompletionRequest req = new ChatCompletionRequest();
+        ChatRequest req = new ChatRequest();
 req.
 
         setModel("openclaw/default");
 req.
 
-        setMessages(List.of(new ChatCompletionMessage("user", "你好")));
-        ChatCompletionResponse resp = client.chatCompletion(req);
+        setMessages(List.of(new ChatMessage("user", "你好")));
+        ChatResponse resp = client.chatCompletion(req);
 System.out.
 
         println(resp.getChoices().
@@ -105,21 +105,21 @@ OpenClaw 将 OpenAI `model` 字段解释为 **agent 目标**，而非原始模�
 ```java
 import io.github.hiwepy.openclaw.api.model.*;
 
-ChatCompletionRequest req = new ChatCompletionRequest();
+ChatRequest req = new ChatRequest();
 req.
 
 setModel("openclaw/default");
 req.
 
 setMessages(List.of(
-        new ChatCompletionMessage("system", "你是一个有用的助手"),
+        new ChatMessage("system", "你是一个有用的助手"),
     new
 
 ChatCompletionMessage("user","今天天气怎么样？")
 ));
 
 // 基本调用
-ChatCompletionResponse resp = client.chatCompletion(req);
+ChatResponse resp = client.chatCompletion(req);
 String answer = resp.getChoices().get(0).getMessage().getContent();
 
 // 带 OpenClaw 自定义头
@@ -128,7 +128,7 @@ Map<String, String> headers = OpenClawHeaders.builder()
         .sessionKey("my-session")                    // x-openclaw-session-key：显式会话路由
         .messageChannel("slack")                     // x-openclaw-message-channel：通道上下文
         .build();
-ChatCompletionResponse resp2 = client.chatCompletion(req, headers);
+ChatResponse resp2 = client.chatCompletion(req, headers);
 ```
 
 ### Chat Completions（流式 SSE）

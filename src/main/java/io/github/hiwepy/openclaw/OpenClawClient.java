@@ -16,6 +16,8 @@ import io.github.hiwepy.openclaw.ws.protocol.HelloOk;
 import io.github.hiwepy.openclaw.ws.protocol.SessionsSendParams;
 import io.github.hiwepy.openclaw.ws.protocol.result.SessionsSendResult;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -38,6 +40,7 @@ import java.util.concurrent.CompletableFuture;
  * @see OpenClawOpenAiHttpClient
  * @see OpenClawToolsInvokeClient
  */
+@Slf4j
 public class OpenClawClient implements AutoCloseable {
 
     private final OpenClawClientConfig config;
@@ -200,7 +203,7 @@ public class OpenClawClient implements AutoCloseable {
             return wsClient.connectHandshake();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException("WS connect interrupted", e);
+            throw new io.github.hiwepy.openclaw.exception.OpenClawException("WS connect interrupted", e);
         }
     }
 
@@ -283,7 +286,7 @@ public class OpenClawClient implements AutoCloseable {
      * @param request 请求体
      * @return Chat Completions 响应
      */
-    public ChatCompletionResponse chatCompletion(ChatCompletionRequest request) {
+    public ChatResponse chatCompletion(ChatRequest request) {
         return openAiHttpClient.chatCompletion(request);
     }
 
@@ -374,14 +377,26 @@ public class OpenClawClient implements AutoCloseable {
 
     @Override
     public void close() {
-        gatewayHttpClient.close();
-        openAiHttpClient.close();
-        toolsInvokeClient.close();
-        try {
-            wsClient.close();
-        } catch (Exception ignored) {
+        // 逐一释放所有子客户端资源，任一失败不影响其他
+        closeQuietly(gatewayHttpClient);
+        closeQuietly(openAiHttpClient);
+        closeQuietly(toolsInvokeClient);
+        closeQuietly(wsClient);
+    }
+
+    /**
+     * 安全关闭资源（失败不抛异常、不影响后续释放）。
+     */
+    private static void closeQuietly(AutoCloseable resource) {
+        if (resource == null) {
+            return;
         }
-}
+        try {
+            resource.close();
+        } catch (Exception e) {
+            log.warn("Failed to close {}: {}", resource.getClass().getSimpleName(), e.getMessage());
+        }
+    }
     // Session Keys
     // ============================================================
 

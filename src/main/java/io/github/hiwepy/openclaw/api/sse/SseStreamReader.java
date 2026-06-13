@@ -3,9 +3,8 @@ package io.github.hiwepy.openclaw.api.sse;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.hiwepy.openclaw.exception.OpenClawHttpException;
-import io.github.hiwepy.openclaw.api.model.ChatCompletionChunk;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.github.hiwepy.openclaw.api.model.ChatChunk;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -26,9 +25,9 @@ import java.nio.charset.StandardCharsets;
  * @see <a href="https://docs.openclaw.ai/gateway/openai-http-api#streaming-sse">OpenAI Streaming (SSE)</a>
  * @see <a href="https://docs.openclaw.ai/gateway/openresponses-http-api#streaming-sse">OpenResponses Streaming (SSE)</a>
  */
+@Slf4j
 public class SseStreamReader {
 
-    private static final Logger log = LoggerFactory.getLogger(SseStreamReader.class);
     private static final String DONE_MARKER = "[DONE]";
 
     private final ObjectMapper objectMapper;
@@ -112,7 +111,7 @@ public class SseStreamReader {
      * 读取 Chat Completions SSE 流。
      */
     public void readChatCompletionStream(InputStream inputStream, SseEventHandler handler) {
-        readStream(inputStream, handler, ChatCompletionChunk.class);
+        readStream(inputStream, handler, ChatChunk.class);
     }
 
     /**
