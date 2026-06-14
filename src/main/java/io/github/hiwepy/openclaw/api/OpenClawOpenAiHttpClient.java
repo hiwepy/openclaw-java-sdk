@@ -105,6 +105,54 @@ public class OpenClawOpenAiHttpClient implements AutoCloseable {
         }
     }
 
+    /**
+     * 流式 chat completion（POST /v1/chat/completions with stream=true）。
+     * <p>返回输入流，调用方用 {@link io.github.hiwepy.openclaw.api.sse.SseStreamReader} 消费。</p>
+     *
+     * @param request 请求体（自动设 stream=true）
+     * @return SSE 输入流
+     */
+    public java.io.InputStream chatCompletionStream(ChatRequest request) {
+        return chatCompletionStream(request, null);
+    }
+
+    /**
+     * 流式 chat completion（带自定义 header）。
+     */
+    public java.io.InputStream chatCompletionStream(ChatRequest request, java.util.Map<String, String> headers) {
+        Objects.requireNonNull(request, "request");
+        request.setStream(true);
+        String url = resolveUrl("/v1/chat/completions");
+        String token = config.resolveGatewayBearerToken();
+        try {
+            String json = objectMapper.writeValueAsString(request);
+            kong.unirest.core.HttpRequestWithBody req = http.post(url)
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "text/event-stream");
+            if (OpenClawStrings.isNotBlank(token)) {
+                req = req.header("Authorization", "Bearer " + token);
+            }
+            if (headers != null) {
+                for (java.util.Map.Entry<String, String> entry : headers.entrySet()) {
+                    if (OpenClawStrings.isNotBlank(entry.getKey()) && entry.getValue() != null) {
+                        req = req.header(entry.getKey(), entry.getValue());
+                    }
+                }
+            }
+            HttpResponse<java.io.InputStream> response = req.body(json).asObject(java.io.InputStream.class);
+            int status = response.getStatus();
+            if (status < 200 || status >= 300) {
+                throw new OpenClawHttpException(
+                        "POST " + url + " returned status " + status, status, "");
+            }
+            return response.getBody();
+        } catch (OpenClawHttpException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new OpenClawHttpException("Stream request failed: " + e.getMessage(), e);
+        }
+    }
+
     // ============================================================
     // Models
     // ============================================================

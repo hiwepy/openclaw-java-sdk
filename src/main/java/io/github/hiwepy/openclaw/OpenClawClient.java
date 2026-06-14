@@ -135,7 +135,7 @@ public class OpenClawClient implements AutoCloseable {
     }
 
     /**
-     * @deprecated 请改用 {@link #agent(InvokeAgentRequest)}
+     * @deprecated 请改用 {@link #agent(io.github.hiwepy.openclaw.api.InvokeAgentRequest)}
      */
     @Deprecated
     public InvokeAgentResult invokeViaGateway(InvokeAgentRequest request) {
@@ -297,7 +297,7 @@ public class OpenClawClient implements AutoCloseable {
      * @param headers 自定义请求头（可通过 {@link OpenClawHeaders.Builder} 构建）
      * @return Chat Completions 响应
      */
-    public ChatResponse chatCompletion(ChatRequest request, java.util.Map<String, String> headers) {
+    public ChatResponse chatCompletion(ChatRequest request, Map<String, String> headers) {
         return openAiHttpClient.chatCompletion(request, headers);
     }
 
@@ -315,6 +315,40 @@ public class OpenClawClient implements AutoCloseable {
                 .sessionKey(sessionKey)
                 .build();
         return openAiHttpClient.chatCompletion(request, headers);
+    }
+
+    // ----------------------------------------------------------------
+    // Streaming（对齐 Hermes chatCompletionStream）
+    // ----------------------------------------------------------------
+
+    /**
+     * 流式 chat completion，返回 {@link io.github.hiwepy.openclaw.api.sse.StreamingChatResponse}。
+     *
+     * @param request 请求体（自动设 stream=true）
+     * @return 流式响应
+     */
+    public io.github.hiwepy.openclaw.api.sse.StreamingChatResponse chatCompletionStream(ChatRequest request) {
+        java.io.InputStream is = openAiHttpClient.chatCompletionStream(request);
+        return consumeStream(is);
+    }
+
+    /**
+     * 按 sessionKey 流式 chat completion。
+     */
+    public io.github.hiwepy.openclaw.api.sse.StreamingChatResponse chatCompletionStreamWithSession(ChatRequest request, String sessionKey) {
+        java.util.Map<String, String> headers = OpenClawHeaders.builder().sessionKey(sessionKey).build();
+        java.io.InputStream is = openAiHttpClient.chatCompletionStream(request, headers);
+        return consumeStream(is);
+    }
+
+    private io.github.hiwepy.openclaw.api.sse.StreamingChatResponse consumeStream(java.io.InputStream is) {
+        io.github.hiwepy.openclaw.api.sse.StreamingChatResponse stream = new io.github.hiwepy.openclaw.api.sse.StreamingChatResponse();
+        io.github.hiwepy.openclaw.api.sse.SseStreamReader reader = new io.github.hiwepy.openclaw.api.sse.SseStreamReader();
+        CompletableFuture.runAsync(() -> {
+            try { reader.readChatCompletionStream(is, stream); }
+            catch (Exception e) { stream.completeExceptionally(e); }
+        });
+        return stream;
     }
 
     /**
@@ -428,7 +462,7 @@ public class OpenClawClient implements AutoCloseable {
     // ============================================================
 
     /**
-     * 复制 {@link InvokeAgentRequest} 并设置 session key。
+     * 复制 {@link io.github.hiwepy.openclaw.api.InvokeAgentRequest} 并设置 session key。
      * <p>用于 {@link OpenClawSessionKeys} 的辅助方法。</p>
      */
     public static InvokeAgentRequest copyRequest(InvokeAgentRequest request) {
