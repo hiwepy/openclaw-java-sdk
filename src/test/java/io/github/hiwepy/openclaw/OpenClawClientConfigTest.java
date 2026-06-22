@@ -5,16 +5,16 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * {@link OpenClawClientConfig} 凭证解析单测。
+ * {@link OpenClawHttpClientConfig} 凭证解析单测。
  */
 class OpenClawClientConfigTest {
 
     /**
-     * {@link OpenClawClientConfig#resolveHooksBearerToken()}：hooks 优先于兼容字段 apiKey。
+     * {@link OpenClawHttpClientConfig#resolveHooksBearerToken()}：hooks 优先于兼容字段 apiKey。
      */
     @Test
     void resolveHooksBearerToken_prefersHooksToken() {
-        OpenClawClientConfig c = new OpenClawClientConfig();
+        OpenClawHttpClientConfig c = new OpenClawHttpClientConfig();
         c.setHooksToken("hook-only");
         c.setApiKey("should-not-win");
         assertEquals("hook-only", c.resolveHooksBearerToken());
@@ -25,7 +25,7 @@ class OpenClawClientConfigTest {
      */
     @Test
     void resolveHooksBearerToken_fallsBackToApiKey() {
-        OpenClawClientConfig c = new OpenClawClientConfig();
+        OpenClawHttpClientConfig c = new OpenClawHttpClientConfig();
         c.setApiKey("legacy-key");
         assertEquals("legacy-key", c.resolveHooksBearerToken());
     }
@@ -35,7 +35,7 @@ class OpenClawClientConfigTest {
      */
     @Test
     void resolveHooksBearerToken_ignoresGatewayAuthToken() {
-        OpenClawClientConfig c = new OpenClawClientConfig();
+        OpenClawHttpClientConfig c = new OpenClawHttpClientConfig();
         c.setGatewayAuthToken("gateway-secret");
         assertEquals("", c.resolveHooksBearerToken());
     }

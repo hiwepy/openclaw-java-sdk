@@ -2,7 +2,7 @@ package io.github.hiwepy.openclaw.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.hiwepy.openclaw.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.OpenClawHttpClientConfig;
 import io.github.hiwepy.openclaw.exception.OpenClawHttpException;
 import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import lombok.extern.slf4j.Slf4j;
@@ -24,25 +24,25 @@ public class OpenClawGatewayHttpClient implements AutoCloseable {
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     private static final ObjectMapper RESPONSE_MAPPER = new ObjectMapper();
 
-    private final OpenClawClientConfig config;
+    private final OpenClawHttpClientConfig config;
     private final ObjectMapper objectMapper;
     private final OkHttpClient httpClient;
 
-    public OpenClawGatewayHttpClient(OpenClawClientConfig config, ObjectMapper mapper) {
+    public OpenClawGatewayHttpClient(OpenClawHttpClientConfig config, ObjectMapper mapper) {
         this(config, mapper, null);
     }
 
-    public OpenClawGatewayHttpClient(OpenClawClientConfig config) {
+    public OpenClawGatewayHttpClient(OpenClawHttpClientConfig config) {
         this(config, null, null);
     }
 
-    public OpenClawGatewayHttpClient(OpenClawClientConfig config, ObjectMapper mapper, OkHttpClient httpClient) {
+    public OpenClawGatewayHttpClient(OpenClawHttpClientConfig config, ObjectMapper mapper, OkHttpClient httpClient) {
         this.config = Objects.requireNonNull(config, "config");
         this.objectMapper = mapper != null ? mapper : new ObjectMapper();
         this.httpClient = httpClient != null ? httpClient : buildOkHttpClient(config);
     }
 
-    private static OkHttpClient buildOkHttpClient(OpenClawClientConfig config) {
+    private static OkHttpClient buildOkHttpClient(OpenClawHttpClientConfig config) {
         OkHttpClient.Builder builder = new OkHttpClient.Builder()
                 .connectTimeout(config.getConnectTimeoutMillis(), TimeUnit.MILLISECONDS)
                 .readTimeout(config.getReadTimeoutMillis(), TimeUnit.MILLISECONDS);

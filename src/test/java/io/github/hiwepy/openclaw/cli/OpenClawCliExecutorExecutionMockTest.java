@@ -1,6 +1,6 @@
 package io.github.hiwepy.openclaw.cli;
 
-import io.github.hiwepy.openclaw.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.OpenClawCliConfig;
 import io.github.hiwepy.openclaw.cli.support.SubprocessExecutionSupport;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -46,10 +46,10 @@ class OpenClawCliExecutorExecutionMockTest {
                 + "esac\n").getBytes(StandardCharsets.UTF_8));
         makeExecutable(scriptPath);
 
-        OpenClawClientConfig cfg = new OpenClawClientConfig();
-        cfg.setLocalExecutable(scriptPath.toAbsolutePath().toString());
-        cfg.setLocalTimeoutSeconds(1);
-        cfg.setLocalMaxConcurrentExecutions(2);
+        OpenClawCliConfig cfg = new OpenClawCliConfig();
+        cfg.setExecutable(scriptPath.toAbsolutePath().toString());
+        cfg.setTimeout(1);
+        cfg.setMaxConcurrentExecutions(2);
         executor = new OpenClawCliExecutor(cfg);
     }
 
@@ -72,9 +72,9 @@ class OpenClawCliExecutorExecutionMockTest {
 
     @Test
     void spawnFailureShouldReturnNegativeExit() {
-        OpenClawClientConfig cfg = new OpenClawClientConfig();
-        cfg.setLocalExecutable(scriptPath.toAbsolutePath().toString());
-        cfg.setLocalTimeoutSeconds(5);
+        OpenClawCliConfig cfg = new OpenClawCliConfig();
+        cfg.setExecutable(scriptPath.toAbsolutePath().toString());
+        cfg.setTimeout(5);
         OpenClawCliExecutor failing = new OpenClawCliExecutor(cfg) {
             @Override
             SubprocessExecutionSupport.RunSession executeSubprocess(

@@ -2,7 +2,7 @@ package io.github.hiwepy.openclaw.api;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.hiwepy.openclaw.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.OpenClawHttpClientConfig;
 import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import io.github.hiwepy.openclaw.exception.OpenClawHttpException;
 import io.github.hiwepy.openclaw.api.model.*;
@@ -25,26 +25,26 @@ public class OpenClawOpenAiHttpClient implements AutoCloseable {
 
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
-    private final OpenClawClientConfig config;
+    private final OpenClawHttpClientConfig config;
     private final ObjectMapper objectMapper;
     private final OkHttpClient httpClient;
 
-    public OpenClawOpenAiHttpClient(OpenClawClientConfig config, ObjectMapper mapper) {
+    public OpenClawOpenAiHttpClient(OpenClawHttpClientConfig config, ObjectMapper mapper) {
         this(config, mapper, null);
     }
 
-    public OpenClawOpenAiHttpClient(OpenClawClientConfig config) {
+    public OpenClawOpenAiHttpClient(OpenClawHttpClientConfig config) {
         this(config, null, null);
     }
 
-    public OpenClawOpenAiHttpClient(OpenClawClientConfig config, ObjectMapper mapper, OkHttpClient httpClient) {
+    public OpenClawOpenAiHttpClient(OpenClawHttpClientConfig config, ObjectMapper mapper, OkHttpClient httpClient) {
         this.config = Objects.requireNonNull(config, "config");
         this.objectMapper = mapper != null ? mapper : new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         this.httpClient = httpClient != null ? httpClient : buildOkHttpClient(config);
     }
 
-    private static OkHttpClient buildOkHttpClient(OpenClawClientConfig config) {
+    private static OkHttpClient buildOkHttpClient(OpenClawHttpClientConfig config) {
         OkHttpClient.Builder builder = new OkHttpClient.Builder()
                 .connectTimeout(config.getConnectTimeoutMillis(), TimeUnit.MILLISECONDS)
                 .readTimeout(config.getReadTimeoutMillis(), TimeUnit.MILLISECONDS);

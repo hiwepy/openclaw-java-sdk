@@ -65,12 +65,12 @@ public class OpenClawClient implements AutoCloseable {
      */
     public OpenClawClient(OpenClawClientConfig config, com.fasterxml.jackson.databind.ObjectMapper objectMapper, okhttp3.OkHttpClient httpClient) {
         this.config = Objects.requireNonNull(config, "config");
-        OpenClawCliExecutor exec = new OpenClawCliExecutor(config);
-        this.gatewayHttpClient = new OpenClawGatewayHttpClient(config, objectMapper, httpClient);
-        this.openAiHttpClient = new OpenClawOpenAiHttpClient(config, objectMapper, httpClient);
-        this.toolsInvokeClient = new OpenClawToolsInvokeClient(config, objectMapper, httpClient);
+        OpenClawCliExecutor exec = new OpenClawCliExecutor(config.getCli());
+        this.gatewayHttpClient = new OpenClawGatewayHttpClient(config.getHttp(), objectMapper, httpClient);
+        this.openAiHttpClient = new OpenClawOpenAiHttpClient(config.getHttp(), objectMapper, httpClient);
+        this.toolsInvokeClient = new OpenClawToolsInvokeClient(config.getHttp(), objectMapper, httpClient);
         this.cli = new OpenClawCli(exec);
-        this.wsClient = new OpenClawGatewayWsClient(config);
+        this.wsClient = new OpenClawGatewayWsClient(config.getHttp());
     }
 
     /**
@@ -81,10 +81,10 @@ public class OpenClawClient implements AutoCloseable {
                           OpenClawGatewayHttpClient gatewayHttpClient) {
         this.config = Objects.requireNonNull(config, "config");
         this.gatewayHttpClient = Objects.requireNonNull(gatewayHttpClient, "gatewayHttpClient");
-        this.openAiHttpClient = new OpenClawOpenAiHttpClient(config);
-        this.toolsInvokeClient = new OpenClawToolsInvokeClient(config);
-        this.cli = new OpenClawCli(new OpenClawCliExecutor(config));
-        this.wsClient = new OpenClawGatewayWsClient(config);
+        this.openAiHttpClient = new OpenClawOpenAiHttpClient(config.getHttp());
+        this.toolsInvokeClient = new OpenClawToolsInvokeClient(config.getHttp());
+        this.cli = new OpenClawCli(new OpenClawCliExecutor(config.getCli()));
+        this.wsClient = new OpenClawGatewayWsClient(config.getHttp());
     }
 
     /**

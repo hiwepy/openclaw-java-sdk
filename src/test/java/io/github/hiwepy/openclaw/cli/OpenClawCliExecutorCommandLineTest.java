@@ -1,6 +1,6 @@
 package io.github.hiwepy.openclaw.cli;
 
-import io.github.hiwepy.openclaw.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.OpenClawCliConfig;
 import org.apache.commons.exec.CommandLine;
 import org.junit.jupiter.api.Test;
 
@@ -13,8 +13,8 @@ class OpenClawCliExecutorCommandLineTest {
 
     @Test
     void toCommandLine_globalFlagsAndSubcommands() {
-        OpenClawClientConfig cfg = new OpenClawClientConfig();
-        cfg.setLocalExecutable("openclaw");
+        OpenClawCliConfig cfg = new OpenClawCliConfig();
+        cfg.setExecutable("openclaw");
         OpenClawCliExecutor exec = new OpenClawCliExecutor(cfg);
         OpenClawCliRequest req = OpenClawCliRequest.builder()
                 .dev(true)
@@ -31,8 +31,8 @@ class OpenClawCliExecutorCommandLineTest {
 
     @Test
     void version_usesSingleFlagArgument() {
-        OpenClawClientConfig cfg = new OpenClawClientConfig();
-        cfg.setLocalExecutable("openclaw");
+        OpenClawCliConfig cfg = new OpenClawCliConfig();
+        cfg.setExecutable("openclaw");
         OpenClawCliExecutor exec = new OpenClawCliExecutor(cfg);
         OpenClawCliRequest req = OpenClawCliRequest.builder().arguments("--version").build();
         assertArrayEquals(new String[]{"openclaw", "--version"}, exec.toCommandLine(req).toStrings());

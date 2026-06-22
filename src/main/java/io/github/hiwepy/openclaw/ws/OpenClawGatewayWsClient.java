@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.hiwepy.openclaw.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.OpenClawHttpClientConfig;
 import io.github.hiwepy.openclaw.exception.OpenClawWsRpcException;
 import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import io.github.hiwepy.openclaw.ws.protocol.*;
@@ -65,7 +65,7 @@ public class OpenClawGatewayWsClient extends WebSocketClient implements AutoClos
     /** 默认 RPC 超时（毫秒） */
     private static final long DEFAULT_RPC_TIMEOUT_MS = 120_000L;
 
-    private final OpenClawClientConfig config;
+    private final OpenClawHttpClientConfig config;
     private final ObjectMapper objectMapper;
     private final List<OpenClawWsListener> listeners = new CopyOnWriteArrayList<>();
 
@@ -98,11 +98,11 @@ public class OpenClawGatewayWsClient extends WebSocketClient implements AutoClos
     // 构造
     // ============================================================
 
-    public OpenClawGatewayWsClient(OpenClawClientConfig config) {
+    public OpenClawGatewayWsClient(OpenClawHttpClientConfig config) {
         this(config, buildWsUri(config));
     }
 
-    public OpenClawGatewayWsClient(OpenClawClientConfig config, URI serverUri) {
+    public OpenClawGatewayWsClient(OpenClawHttpClientConfig config, URI serverUri) {
         super(serverUri);
         this.config = config;
         this.objectMapper = new ObjectMapper()
@@ -110,7 +110,7 @@ public class OpenClawGatewayWsClient extends WebSocketClient implements AutoClos
         this.setConnectionLostTimeout(30);
     }
 
-    private static URI buildWsUri(OpenClawClientConfig config) {
+    private static URI buildWsUri(OpenClawHttpClientConfig config) {
         String base = config.getGatewayBaseUrl();
         if (OpenClawStrings.isBlank(base)) {
             throw new IllegalArgumentException("gatewayBaseUrl is required for WebSocket connection");

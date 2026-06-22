@@ -1,6 +1,6 @@
 package io.github.hiwepy.openclaw.ws;
 
-import io.github.hiwepy.openclaw.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.OpenClawHttpClientConfig;
 import io.github.hiwepy.openclaw.ws.protocol.*;
 import io.github.hiwepy.openclaw.ws.protocol.params.SessionsListParams;
 import io.github.hiwepy.openclaw.ws.protocol.result.SessionsListResult;
@@ -184,7 +184,7 @@ class OpenClawWsProtocolTest {
 
     @Test
     void testWsUriBuilding() {
-        OpenClawClientConfig config = new OpenClawClientConfig();
+        OpenClawHttpClientConfig config = new OpenClawHttpClientConfig();
         config.setGatewayBaseUrl("http://localhost:18789");
 
         OpenClawGatewayWsClient client = new OpenClawGatewayWsClient(config);
@@ -193,7 +193,7 @@ class OpenClawWsProtocolTest {
 
     @Test
     void testWsUriBuildingHttps() {
-        OpenClawClientConfig config = new OpenClawClientConfig();
+        OpenClawHttpClientConfig config = new OpenClawHttpClientConfig();
         config.setGatewayBaseUrl("https://my-gateway.example.com");
 
         OpenClawGatewayWsClient client = new OpenClawGatewayWsClient(config);
@@ -202,7 +202,7 @@ class OpenClawWsProtocolTest {
 
     @Test
     void testWsUriBuildingTrailingSlash() {
-        OpenClawClientConfig config = new OpenClawClientConfig();
+        OpenClawHttpClientConfig config = new OpenClawHttpClientConfig();
         config.setGatewayBaseUrl("http://localhost:18789/");
 
         OpenClawGatewayWsClient client = new OpenClawGatewayWsClient(config);

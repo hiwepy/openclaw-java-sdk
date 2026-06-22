@@ -1,8 +1,9 @@
 package io.github.hiwepy.openclaw.cli;
 
-import io.github.hiwepy.openclaw.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.OpenClawCliConfig;
 import io.github.hiwepy.openclaw.cli.support.SubprocessExecutionSupport;
 import io.github.hiwepy.openclaw.util.OpenClawStrings;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecuteResultHandler;
@@ -18,21 +19,18 @@ import java.util.Objects;
  * @see <a href="https://docs.openclaw.ai/gateway/cli-backends">CLI Backends</a>
  * @see <a href="https://docs.openclaw.ai/cli">CLI Reference</a>
  */
+@Getter
 @Slf4j
 public class OpenClawCliExecutor {
 
-    private final OpenClawClientConfig config;
+    private final OpenClawCliConfig config;
 
     /**
-     * @param config 客户端配置，不得为 null
+     * @param config CLI 配置，不得为 null
      */
-    public OpenClawCliExecutor(OpenClawClientConfig config) {
+    public OpenClawCliExecutor(OpenClawCliConfig config) {
         this.config = Objects.requireNonNull(config, "config");
-        SubprocessExecutionSupport.configureMaxConcurrentExecutions(config.getLocalMaxConcurrentExecutions());
-    }
-
-    public OpenClawClientConfig getConfig() {
-        return config;
+        SubprocessExecutionSupport.configureMaxConcurrentExecutions(config.getMaxConcurrentExecutions());
     }
 
     /**
@@ -60,12 +58,12 @@ public class OpenClawCliExecutor {
 
             DefaultExecuteResultHandler handler = session.getHandler();
             Exception asyncFailure = handler.getException();
-            if (asyncFailure instanceof ExecuteException) {
-                ExecuteException ex = (ExecuteException) asyncFailure;
-                return new OpenClawCliResult(ex.getExitValue(), stdout, stderr);
-            }
             if (asyncFailure != null) {
                 log.warn("openclaw async failure: {}", asyncFailure.getMessage());
+                if (asyncFailure instanceof ExecuteException) {
+                    ExecuteException ex = (ExecuteException) asyncFailure;
+                    return new OpenClawCliResult(ex.getExitValue(), stdout, stderr);
+                }
                 stderr = appendLine(stderr, asyncFailure.getMessage());
                 return new OpenClawCliResult(-1, stdout, stderr);
             }
@@ -100,7 +98,7 @@ public class OpenClawCliExecutor {
     }
 
     private File resolveWorkingDirectory() {
-        String wdProperty = config.getLocalWorkingDirectory();
+        String wdProperty = config.getWorkingDirectory();
         if (OpenClawStrings.isBlank(wdProperty)) {
             return null;
         }
@@ -117,14 +115,14 @@ public class OpenClawCliExecutor {
         if (t != null && t > 0) {
             return t * 1000L;
         }
-        return Math.max(1L, config.getLocalTimeoutSeconds()) * 1000L;
+        return Math.max(1L, config.getTimeout()) * 1000L;
     }
 
     /**
      * 将请求转换为 {@link CommandLine}，便于测试与调试。
      */
     public CommandLine toCommandLine(OpenClawCliRequest request) {
-        CommandLine cmd = new CommandLine(config.getLocalExecutable());
+        CommandLine cmd = new CommandLine(config.getExecutable());
         if (request.isDev()) {
             cmd.addArgument("--dev");
         }

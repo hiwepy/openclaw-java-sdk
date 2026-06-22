@@ -1,6 +1,6 @@
 package io.github.hiwepy.openclaw.cli.support;
 
-import io.github.hiwepy.openclaw.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.OpenClawCliConfig;
 import io.github.hiwepy.openclaw.cli.OpenClawCliExecutor;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -37,11 +37,11 @@ public final class MockOpenClawCli {
     /**
      * 构造绑定 mock 可执行文件的配置。
      */
-    public OpenClawClientConfig newConfig() {
-        OpenClawClientConfig config = new OpenClawClientConfig();
-        config.setLocalExecutable(scriptPath.toAbsolutePath().toString());
-        config.setLocalProbeTimeoutSeconds(5);
-        config.setLocalTimeoutSeconds(5);
+    public OpenClawCliConfig newConfig() {
+        OpenClawCliConfig config = new OpenClawCliConfig();
+        config.setExecutable(scriptPath.toAbsolutePath().toString());
+        config.setProbeTimeoutSeconds(5);
+        config.setTimeout(5);
         return config;
     }
 

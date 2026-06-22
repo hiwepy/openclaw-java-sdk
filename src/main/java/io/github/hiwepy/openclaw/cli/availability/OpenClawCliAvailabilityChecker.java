@@ -1,6 +1,6 @@
 package io.github.hiwepy.openclaw.cli.availability;
 
-import io.github.hiwepy.openclaw.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.OpenClawCliConfig;
 import io.github.hiwepy.openclaw.cli.OpenClawCli;
 import io.github.hiwepy.openclaw.cli.OpenClawCliExecutor;
 import io.github.hiwepy.openclaw.cli.OpenClawCliResult;
@@ -23,9 +23,9 @@ public class OpenClawCliAvailabilityChecker {
      * @param config 客户端配置，不得为 null
      * @return 探测报告
      */
-    public OpenClawCliAvailabilityReport check(OpenClawClientConfig config) {
+    public OpenClawCliAvailabilityReport check(OpenClawCliConfig config) {
         Objects.requireNonNull(config, "config");
-        String configured = config.getLocalExecutable();
+        String configured = config.getExecutable();
         if (OpenClawStrings.isBlank(configured)) {
             return unavailable(
                     OpenClawCliAvailabilityStatus.EXECUTABLE_NOT_CONFIGURED,
@@ -62,7 +62,7 @@ public class OpenClawCliAvailabilityChecker {
                     null);
         }
 
-        OpenClawClientConfig probeConfig = copyForProbe(config);
+        OpenClawCliConfig probeConfig = copyForProbe(config);
         OpenClawCliExecutor probeExecutor = new OpenClawCliExecutor(probeConfig);
         OpenClawCliResult result = new OpenClawCli(probeExecutor).version();
         if (result.isSuccess()) {
@@ -130,17 +130,17 @@ public class OpenClawCliAvailabilityChecker {
         return Optional.empty();
     }
 
-    private static OpenClawClientConfig copyForProbe(OpenClawClientConfig source) {
-        OpenClawClientConfig copy = new OpenClawClientConfig();
-        copy.setLocalExecutable(source.getLocalExecutable());
-        copy.setLocalWorkingDirectory(source.getLocalWorkingDirectory());
-        copy.setLocalMaxConcurrentExecutions(source.getLocalMaxConcurrentExecutions());
-        int probeSec = source.getLocalProbeTimeoutSeconds();
+    private static OpenClawCliConfig copyForProbe(OpenClawCliConfig source) {
+        OpenClawCliConfig copy = new OpenClawCliConfig();
+        copy.setExecutable(source.getExecutable());
+        copy.setWorkingDirectory(source.getWorkingDirectory());
+        copy.setMaxConcurrentExecutions(source.getMaxConcurrentExecutions());
+        int probeSec = source.getProbeTimeoutSeconds();
         if (probeSec <= 0) {
             probeSec = 5;
         }
-        copy.setLocalTimeoutSeconds(probeSec);
-        copy.setLocalProbeTimeoutSeconds(probeSec);
+        copy.setTimeout(probeSec);
+        copy.setProbeTimeoutSeconds(probeSec);
         return copy;
     }
 

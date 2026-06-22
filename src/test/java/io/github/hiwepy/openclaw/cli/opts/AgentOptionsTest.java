@@ -1,7 +1,7 @@
 package io.github.hiwepy.openclaw.cli.opts;
 
 import io.github.hiwepy.openclaw.util.OpenClawLists;
-import io.github.hiwepy.openclaw.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.OpenClawCliConfig;
 import io.github.hiwepy.openclaw.cli.OpenClawCliExecutor;
 import io.github.hiwepy.openclaw.cli.OpenClawCliRequest;
 import org.apache.commons.exec.CommandLine;
@@ -84,8 +84,8 @@ class AgentOptionsTest {
 
     @Test
     void openClawCli_fullCommandLine_agentSubcommand() {
-        OpenClawClientConfig cfg = new OpenClawClientConfig();
-        cfg.setLocalExecutable("openclaw");
+        OpenClawCliConfig cfg = new OpenClawCliConfig();
+        cfg.setExecutable("openclaw");
         OpenClawCliExecutor exec = new OpenClawCliExecutor(cfg);
         // 消息体无空格，避免 commons-exec CommandLine.toStrings() 对 token 加引号导致与裸字符串数组比较不一致
         AgentOptions opts = AgentOptions.builder()

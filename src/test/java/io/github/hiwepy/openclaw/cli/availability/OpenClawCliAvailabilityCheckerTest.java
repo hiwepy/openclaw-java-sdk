@@ -1,6 +1,6 @@
 package io.github.hiwepy.openclaw.cli.availability;
 
-import io.github.hiwepy.openclaw.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.OpenClawCliConfig;
 import io.github.hiwepy.openclaw.cli.support.MockOpenClawCli;
 import org.junit.jupiter.api.Test;
 
@@ -24,9 +24,9 @@ class OpenClawCliAvailabilityCheckerTest {
 
     @Test
     void checkShouldFailWhenExecutableMissing() {
-        OpenClawClientConfig config = new OpenClawClientConfig();
-        config.setLocalExecutable("/nonexistent/openclaw-startup-test");
-        config.setLocalProbeTimeoutSeconds(3);
+        OpenClawCliConfig config = new OpenClawCliConfig();
+        config.setExecutable("/nonexistent/openclaw-startup-test");
+        config.setProbeTimeoutSeconds(3);
 
         OpenClawCliAvailabilityReport report = new OpenClawCliAvailabilityChecker().check(config);
 

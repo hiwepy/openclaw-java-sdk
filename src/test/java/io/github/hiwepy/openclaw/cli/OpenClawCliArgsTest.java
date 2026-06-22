@@ -1,6 +1,6 @@
 package io.github.hiwepy.openclaw.cli;
 
-import io.github.hiwepy.openclaw.OpenClawClientConfig;
+import io.github.hiwepy.openclaw.OpenClawCliConfig;
 import io.github.hiwepy.openclaw.cli.opts.DaemonOptions;
 import io.github.hiwepy.openclaw.cli.opts.GatewayCommandOptions;
 import io.github.hiwepy.openclaw.cli.opts.GatewayRpcOptions;
@@ -23,8 +23,8 @@ class OpenClawCliArgsTest {
      */
     @Test
     void gateway_cliArgs_sameTokensAsOpenClawCliRun() {
-        OpenClawClientConfig cfg = new OpenClawClientConfig();
-        cfg.setLocalExecutable("openclaw");
+        OpenClawCliConfig cfg = new OpenClawCliConfig();
+        cfg.setExecutable("openclaw");
         OpenClawCliExecutor exec = new OpenClawCliExecutor(cfg);
         GatewayCommandOptions g = GatewayCommandOptions.builder()
                 .health(GatewayRpcOptions.builder().url("ws://127.0.0.1:18789").build())
@@ -41,8 +41,8 @@ class OpenClawCliArgsTest {
 
     @Test
     void setup_options_mapsDocumentedFlags() {
-        OpenClawClientConfig cfg = new OpenClawClientConfig();
-        cfg.setLocalExecutable("openclaw");
+        OpenClawCliConfig cfg = new OpenClawCliConfig();
+        cfg.setExecutable("openclaw");
         OpenClawCliExecutor exec = new OpenClawCliExecutor(cfg);
         SetupOptions s = SetupOptions.builder()
                 .workspace("/tmp/ws")
@@ -69,8 +69,8 @@ class OpenClawCliArgsTest {
 
     @Test
     void daemon_empty_yieldsTopLevelOnly() {
-        OpenClawClientConfig cfg = new OpenClawClientConfig();
-        cfg.setLocalExecutable("openclaw");
+        OpenClawCliConfig cfg = new OpenClawCliConfig();
+        cfg.setExecutable("openclaw");
         OpenClawCliExecutor exec = new OpenClawCliExecutor(cfg);
         List<String> args = new ArrayList<>();
         args.add("daemon");
