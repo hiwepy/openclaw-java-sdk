@@ -57,7 +57,7 @@ public class OpenClawToolsInvokeClient implements AutoCloseable {
             throw new IllegalArgumentException("tool name is required");
         }
 
-        String url = config.getGatewayBaseUrl().replaceAll("/+$", "") + "/tools/invoke";
+        String url = config.getGatewayBaseUrl().replaceAll("/+$", "") + OpenClawConstants.ENDPOINT_TOOLS_INVOKE;
         String token = config.resolveGatewayBearerToken();
         try {
             Request.Builder builder = new Request.Builder().url(url).header("Content-Type", "application/json");
@@ -73,7 +73,7 @@ public class OpenClawToolsInvokeClient implements AutoCloseable {
                     ToolInvokeResult result = new ToolInvokeResult();
                     result.setOk(false);
                     ToolInvokeResult.ErrorDetail error = new ToolInvokeResult.ErrorDetail();
-                    error.setType("not_found");
+                    error.setType(ToolInvokeResult.ERROR_TYPE_NOT_FOUND);
                     error.setMessage("Tool not available: " + request.getTool());
                     result.setError(error);
                     return result;

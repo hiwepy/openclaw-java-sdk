@@ -1,6 +1,7 @@
-package io.github.hiwepy.openclaw.api;
+package io.github.hiwepy.openclaw.api.model;
 
 import io.github.hiwepy.openclaw.OpenClawClient;
+import io.github.hiwepy.openclaw.api.OpenClawSessionKeys;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -16,7 +17,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class InvokeAgentRequest {
+public class HookRequest {
 
     /** 必填：发给 agent 的提示/任务内容 */
     private String message;
@@ -56,7 +57,7 @@ public class InvokeAgentRequest {
      * @param agentId 路由 agent
      * @param message 发给 agent 的提示/任务内容
      */
-    public InvokeAgentRequest(String agentId, String message) {
+    public HookRequest(String agentId, String message) {
         this.agentId = agentId;
         this.message = message;
     }

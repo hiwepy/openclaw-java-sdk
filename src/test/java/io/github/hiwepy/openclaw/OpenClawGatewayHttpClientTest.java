@@ -1,6 +1,6 @@
 package io.github.hiwepy.openclaw;
 
-import io.github.hiwepy.openclaw.api.InvokeAgentRequest;
+import io.github.hiwepy.openclaw.api.model.HookRequest;
 import io.github.hiwepy.openclaw.api.OpenClawGatewayHttpClient;
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +43,7 @@ class OpenClawGatewayHttpClientTest {
 
     @Test
     void buildHooksAgentBody_includesOptionalFieldsWhenSet() {
-        InvokeAgentRequest r = new InvokeAgentRequest();
+        HookRequest r = new HookRequest();
         r.setMessage("hi"); r.setAgentId("main"); r.setSessionKey("hook:test:1");
         r.setDeliver(true); r.setChannel("last"); r.setTo("user1");
         r.setModel("openai/gpt-5.5"); r.setThinking("off");
@@ -59,7 +59,7 @@ class OpenClawGatewayHttpClientTest {
 
     @Test
     void buildHooksAgentBody_omitsUnsetOptionals() {
-        InvokeAgentRequest r = new InvokeAgentRequest();
+        HookRequest r = new HookRequest();
         r.setMessage("only");
         Map<String, Object> body = OpenClawGatewayHttpClient.buildHooksAgentBody(r);
         assertFalse(body.containsKey("agentId"));
@@ -68,7 +68,7 @@ class OpenClawGatewayHttpClientTest {
 
     @Test
     void buildHooksAgentBody_rejectsBlankMessage() {
-        InvokeAgentRequest r = new InvokeAgentRequest();
+        HookRequest r = new HookRequest();
         r.setMessage("   ");
         assertThrows(IllegalArgumentException.class,
                 () -> OpenClawGatewayHttpClient.buildHooksAgentBody(r));

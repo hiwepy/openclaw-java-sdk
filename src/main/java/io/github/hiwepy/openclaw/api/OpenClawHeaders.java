@@ -22,14 +22,22 @@ import java.util.Map;
  */
 public final class OpenClawHeaders {
 
-    public static final String X_OPENCLAW_MODEL = "x-openclaw-model";
-    public static final String X_OPENCLAW_AGENT_ID = "x-openclaw-agent-id";
-    public static final String X_OPENCLAW_SESSION_KEY = "x-openclaw-session-key";
-    public static final String X_OPENCLAW_MESSAGE_CHANNEL = "x-openclaw-message-channel";
-    public static final String X_OPENCLAW_SCOPES = "x-openclaw-scopes";
+    /** Header: 覆盖后端模型 */
+    public static final String X_OPENCLAW_MODEL = OpenClawConstants.HEADER_X_OPENCLAW_MODEL;
 
-    private OpenClawHeaders() {
-    }
+    /** Header: Agent ID 兼容性覆盖 */
+    public static final String X_OPENCLAW_AGENT_ID = OpenClawConstants.HEADER_X_OPENCLAW_AGENT_ID;
+
+    /** Header: 会话路由 Key */
+    public static final String X_OPENCLAW_SESSION_KEY = OpenClawConstants.HEADER_X_OPENCLAW_SESSION_KEY;
+
+    /** Header: 入口通道上下文 */
+    public static final String X_OPENCLAW_MESSAGE_CHANNEL = OpenClawConstants.HEADER_X_OPENCLAW_MESSAGE_CHANNEL;
+
+    /** Header: 权限范围声明 */
+    public static final String X_OPENCLAW_SCOPES = OpenClawConstants.HEADER_X_OPENCLAW_SCOPES;
+
+    private OpenClawHeaders() {}
 
     /**
      * 创建新的 Builder。
@@ -50,7 +58,6 @@ public final class OpenClawHeaders {
 
         /**
          * 覆盖后端模型（如 {@code openai/gpt-5.4}、{@code gpt-5.5}）。
-         * <p>对应 {@code x-openclaw-model} 头。</p>
          */
         public Builder model(String model) {
             this.model = model;
@@ -59,7 +66,6 @@ public final class OpenClawHeaders {
 
         /**
          * 兼容性 agent 覆盖。
-         * <p>对应 {@code x-openclaw-agent-id} 头。</p>
          */
         public Builder agentId(String agentId) {
             this.agentId = agentId;
@@ -68,7 +74,6 @@ public final class OpenClawHeaders {
 
         /**
          * 显式会话路由。
-         * <p>对应 {@code x-openclaw-session-key} 头。</p>
          */
         public Builder sessionKey(String sessionKey) {
             this.sessionKey = sessionKey;
@@ -77,7 +82,6 @@ public final class OpenClawHeaders {
 
         /**
          * 合成入口通道上下文（如 {@code slack}、{@code telegram}）。
-         * <p>对应 {@code x-openclaw-message-channel} 头。</p>
          */
         public Builder messageChannel(String messageChannel) {
             this.messageChannel = messageChannel;
@@ -86,8 +90,6 @@ public final class OpenClawHeaders {
 
         /**
          * 权限范围声明（逗号分隔，如 {@code operator.read,operator.write}）。
-         * <p>对应 {@code x-openclaw-scopes} 头。
-         * 共享密钥鉴权模式下此头被忽略。</p>
          */
         public Builder scopes(String scopes) {
             this.scopes = scopes;

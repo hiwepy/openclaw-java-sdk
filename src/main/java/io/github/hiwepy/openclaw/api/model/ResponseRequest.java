@@ -1,6 +1,10 @@
 package io.github.hiwepy.openclaw.api.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.github.hiwepy.openclaw.api.OpenClawConstants;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -12,77 +16,64 @@ import java.util.Map;
  * OpenResponses API 请求体。
  * <p>
  * 对应 {@code POST /v1/responses} 的请求 JSON。
- * OpenClaw Gateway 将 {@code model} 字段解释为 agent 目标，与 OpenAI Chat Completions 一致。
  * </p>
  *
- * <h3>请求格式</h3>
- * <p>{@code input} 可以是：</p>
+ * <h3>字段语义</h3>
  * <ul>
- *   <li>单个字符串 - 作为用户消息发送</li>
- *   <li>Item 对象数组 - 支持消息、函数调用输出、图片、文件等</li>
+ *   <li>{@code agent} - Agent 目标路由（如 {@code "openclaw/default"}）
+ *   <li>{@code model} - 后端 LLM 模型（如 {@code "gpt-4o"}）
  * </ul>
  *
- * <h3>会话行为</h3>
- * <p>默认每次请求无状态（新会话 key）。若请求包含 {@code user} 字符串，
- * Gateway 会从中派生稳定的 session key。</p>
+ * <h3>用法示例</h3>
+ * <pre>{@code
+ * // 方式1：字符串输入
+ * ResponseRequest request = ResponseRequest.builder()
+ *     .agent("openclaw/default")
+ *     .input("What is the weather?")
+ *     .build();
  *
- * <h3>支持的字段</h3>
- * <ul>
- *   <li>{@code input} - 字符串或 Item 对象数组</li>
- *   <li>{@code instructions} - 合并到系统提示</li>
- *   <li>{@code tools} - 客户端工具定义</li>
- *   <li>{@code toolChoice} - 工具选择策略</li>
- *   <li>{@code stream} - 启用 SSE 流式</li>
- *   <li>{@code maxOutputTokens} - 最大输出 token（最佳努力）</li>
- *   <li>{@code temperature} - 采样温度</li>
- *   <li>{@code topP} - nucleus 采样</li>
- *   <li>{@code user} - 稳定 session 路由</li>
- *   <li>{@code previousResponseId} - 复用先前响应的 session</li>
- * </ul>
+ * // 方式2：Item 数组输入
+ * ResponseRequest request = ResponseRequest.builder()
+ *     .agent("openclaw/default")
+ *     .input(List.of(
+ *         InputItem.message().role("user").content("What is the weather?").build(),
+ *         InputItem.imageSource("url", "https://example.com/photo.jpg").build()
+ *     ))
+ *     .build();
+ *
+ * // 方式3：工具调用结果
+ * ResponseRequest request = ResponseRequest.builder()
+ *     .agent("openclaw/default")
+ *     .input(List.of(
+ *         InputItem.message().role("assistant").content(null).build(),
+ *         InputItem.functionCallOutput().callId("call_abc").output("{\"temperature\":\"25C\"}").build()
+ *     ))
+ *     .build();
+ * }</pre>
  *
  * @see <a href="https://docs.openclaw.ai/gateway/openresponses-http-api">OpenResponses API</a>
  */
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ResponseRequest {
 
     /**
      * Agent 目标标识。
-     * <p>使用 {@code "openclaw"}、{@code "openclaw/default"} 或 {@code "openclaw/<agentId>"}。</p>
+     */
+    private String agent;
+
+    /**
+     * 后端 LLM 模型标识。
      */
     private String model;
 
     /**
      * 输入内容。
-     * <p>可以是单个字符串（作为用户消息）或 Item 对象数组。</p>
-     *
-     * <h4>Item 类型</h4>
-     * <ul>
-     *   <li>{@code message} - 消息对象，角色：{@code system}、{@code developer}、{@code user}、{@code assistant}
-     *     <ul>
-     *       <li>{@code system} 和 {@code developer} 追加到系统提示</li>
-     *       <li>最新的 {@code user} 或 {@code function_call_output} 成为"当前消息"</li>
-     *     </ul>
-     *   </li>
-     *   <li>{@code function_call_output} - 工具调用结果
-     *     <pre>{@code
-     *     { "type": "function_call_output", "call_id": "call_123", "output": "{\"temperature\": \"72F\"}" }
-     *     }</pre>
-     *   </li>
-     *   <li>{@code input_image} - 图片输入（base64 或 URL，最大 10MB）
-     *     <ul>
-     *       <li>支持 MIME：{@code image/jpeg}、{@code image/png}、{@code image/gif}、{@code image/webp}、{@code image/heic}、{@code image/heif}</li>
-     *     </ul>
-     *   </li>
-     *   <li>{@code input_file} - 文件输入（base64 或 URL，最大 5MB）
-     *     <ul>
-     *       <li>支持 MIME：{@code text/plain}、{@code text/markdown}、{@code text/html}、{@code text/csv}、{@code application/json}、{@code application/pdf}</li>
-     *       <li>文件内容解码后添加到系统提示（非用户消息），并标记为不受信任的外部内容</li>
-     *     </ul>
-     *   </li>
-     * </ul>
+     * <p>可以是单个字符串或 Item 对象数组。</p>
      */
     private Object input;
 
@@ -93,9 +84,6 @@ public class ResponseRequest {
 
     /**
      * 客户端工具定义。
-     * <p>格式：{@code [{ type: "function", name: "...", description: "...", parameters: {...} }]}</p>
-     * <p>若 agent 决定调用工具，响应返回 {@code function_call} 输出项。
-     * 客户端应发送包含 {@code function_call_output} 的后续请求以继续。</p>
      */
     private List<Map<String, Object>> tools;
 
@@ -108,46 +96,199 @@ public class ResponseRequest {
 
     /**
      * 是否启用 SSE 流式响应。
-     * <p>流式事件类型：</p>
-     * <ul>
-     *   <li>{@code response.created}</li>
-     *   <li>{@code response.in_progress}</li>
-     *   <li>{@code response.output_item.added}</li>
-     *   <li>{@code response.content_part.added}</li>
-     *   <li>{@code response.output_text.delta}</li>
-     *   <li>{@code response.output_text.done}</li>
-     *   <li>{@code response.content_part.done}</li>
-     *   <li>{@code response.output_item.done}</li>
-     *   <li>{@code response.completed}</li>
-     *   <li>{@code response.failed}（错误时）</li>
-     * </ul>
-     * <p>流以 {@code data: [DONE]} 结束。</p>
      */
     private Boolean stream;
 
     /**
-     * 最大输出 token 数（最佳努力，取决于 provider）。
+     * 最大输出 token 数。
      */
     private Integer maxOutputTokens;
 
     /**
-     * 采样温度（最佳努力转发到 provider）。
+     * 采样温度。
      */
     private Double temperature;
 
     /**
-     * nucleus 采样参数（最佳努力转发到 provider）。
+     * nucleus 采样参数。
      */
     private Double topP;
 
     /**
-     * 用户标识（用于派生稳定的 session key）。
+     * 用户标识。
      */
     private String user;
 
     /**
      * 先前响应 ID。
-     * <p>OpenClaw 在相同 agent/user/requested-session scope 内复用先前响应的 session。</p>
      */
     private String previousResponseId;
+
+    // ==================== Inner Classes ====================
+
+    /**
+     * Response API 的 Input Item 类型。
+     * <p>
+     * 支持：message、function_call_output、input_image、input_file
+     * </p>
+     *
+     * <h3>用法示例</h3>
+     * <pre>{@code
+     * // 图片输入（URL）
+     * InputItem.imageSource("url", "https://example.com/photo.jpg")
+     *
+     * // 图片输入（base64）
+     * InputItem.imageSource("base64", "data:image/png;base64,...")
+     *
+     * // 文件输入（URL，带 MIME 类型）
+     * InputItem.fileSource("url", "https://example.com/doc.pdf", "application/pdf")
+     *
+     * // 文件输入（base64）
+     * InputItem.fileSource("base64", "data:application/pdf;base64,...", "application/pdf")
+     * }</pre>
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class InputItem {
+
+        /** Item 类型：message、function_call_output、input_image、input_file */
+        private String type;
+
+        // message 类型字段
+        private String role;
+        private String content;
+
+        // function_call_output 类型字段
+        @JsonProperty("call_id")
+        private String callId;
+        private String output;
+
+        // input_image / input_file 共享 source 字段
+        private Source source;
+
+        // ==================== Factory Methods ====================
+
+        /**
+         * 创建消息类型 Item。
+         */
+        public static InputItemBuilder message() {
+            return InputItem.builder().type(OpenClawConstants.INPUT_TYPE_MESSAGE);
+        }
+
+        /**
+         * 创建函数调用结果类型 Item。
+         */
+        public static InputItemBuilder functionCallOutput() {
+            return InputItem.builder().type(OpenClawConstants.INPUT_TYPE_FUNCTION_CALL_OUTPUT);
+        }
+
+        /**
+         * 创建图片输入类型 Item。
+         *
+         * @param sourceType 来源类型：{@code "url"} 或 {@code "base64"}
+         * @param value     URL 地址或 base64 数据
+         */
+        public static InputItemBuilder imageSource(String sourceType, String value) {
+            return InputItem.builder()
+                    .type(OpenClawConstants.INPUT_TYPE_IMAGE)
+                    .source(Source.builder()
+                            .type(sourceType)
+                            .url(value)
+                            .build());
+        }
+
+        /**
+         * 创建图片输入类型 Item（URL）。
+         */
+        public static InputItemBuilder imageUrl(String url) {
+            return imageSource("url", url);
+        }
+
+        /**
+         * 创建图片输入类型 Item（base64）。
+         */
+        public static InputItemBuilder imageBase64(String base64Data) {
+            return imageSource("base64", base64Data);
+        }
+
+        /**
+         * 创建文件输入类型 Item。
+         *
+         * @param sourceType 来源类型：{@code "url"} 或 {@code "base64"}
+         * @param value     URL 地址或 base64 数据
+         * @param mediaType MIME 类型（如 {@code "text/plain"}、{@code "application/pdf"}）
+         */
+        public static InputItemBuilder fileSource(String sourceType, String value, String mediaType) {
+            return InputItem.builder()
+                    .type(OpenClawConstants.INPUT_TYPE_FILE)
+                    .source(Source.builder()
+                            .type(sourceType)
+                            .url(value)
+                            .mediaType(mediaType)
+                            .build());
+        }
+
+        /**
+         * 创建文件输入类型 Item（URL）。
+         */
+        public static InputItemBuilder fileUrl(String url) {
+            return fileUrl(url, null);
+        }
+
+        /**
+         * 创建文件输入类型 Item（URL，带 MIME 类型）。
+         */
+        public static InputItemBuilder fileUrl(String url, String mediaType) {
+            return fileSource("url", url, mediaType);
+        }
+
+        /**
+         * 创建文件输入类型 Item（base64）。
+         */
+        public static InputItemBuilder fileBase64(String base64Data) {
+            return fileBase64(base64Data, null);
+        }
+
+        /**
+         * 创建文件输入类型 Item（base64，带 MIME 类型）。
+         */
+        public static InputItemBuilder fileBase64(String base64Data, String mediaType) {
+            return fileSource("base64", base64Data, mediaType);
+        }
+
+        // ==================== Source Inner Class ====================
+
+        /**
+         * 图片/文件来源。
+         * <p>
+         * 格式：{@code { type: "url" | "base64", url?: string, media_type?: string, filename?: string, detail?: string }}
+         * </p>
+         */
+        @Getter
+        @Setter
+        @NoArgsConstructor
+        @AllArgsConstructor
+        @Builder
+        public static class Source {
+            /** 来源类型：{@code "url"} 或 {@code "base64"} */
+            private String type;
+
+            /** URL 地址或 base64 数据 */
+            private String url;
+
+            /** MIME 类型 */
+            @JsonProperty("media_type")
+            private String mediaType;
+
+            /** 文件名 */
+            private String filename;
+
+            /** detail 级别：{@code "low"}、{@code "high"}、{@code "auto"} */
+            private String detail;
+        }
+    }
 }

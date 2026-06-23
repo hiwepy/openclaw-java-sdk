@@ -3,6 +3,8 @@ package io.github.hiwepy.openclaw.api;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.hiwepy.openclaw.OpenClawHttpClientConfig;
+import io.github.hiwepy.openclaw.api.model.HookRequest;
+import io.github.hiwepy.openclaw.api.model.HookResponse;
 import io.github.hiwepy.openclaw.exception.OpenClawHttpException;
 import io.github.hiwepy.openclaw.util.OpenClawStrings;
 import lombok.extern.slf4j.Slf4j;
@@ -52,11 +54,11 @@ public class OpenClawGatewayHttpClient implements AutoCloseable {
         return builder.build();
     }
 
-    public InvokeAgentResult postHooksAgent(InvokeAgentRequest request) {
+    public HookResponse postHooksAgent(HookRequest request) {
         Objects.requireNonNull(request, "request");
         Map<String, Object> body = buildHooksAgentBody(request);
         HttpResult response = postWebhook(resolveHooksSubPath("agent"), body);
-        InvokeAgentResult result = new InvokeAgentResult();
+        HookResponse result = new HookResponse();
         result.setHttpStatus(response.getStatus());
         result.setRawBody(response.getBody());
         result.setLocalInvocation(false);
@@ -81,7 +83,7 @@ public class OpenClawGatewayHttpClient implements AutoCloseable {
         return postWebhook(resolveHooksSubPath(normalized), body).getBody();
     }
 
-    public static Map<String, Object> buildHooksAgentBody(InvokeAgentRequest request) {
+    public static Map<String, Object> buildHooksAgentBody(HookRequest request) {
         Objects.requireNonNull(request, "request");
         if (OpenClawStrings.isBlank(request.getMessage())) {
             throw new IllegalArgumentException("hooks/agent: message is required");
@@ -119,7 +121,7 @@ public class OpenClawGatewayHttpClient implements AutoCloseable {
             Request.Builder builder = new Request.Builder().url(url).header("Content-Type", "application/json");
             if (OpenClawStrings.isNotBlank(token)) {
                 if (config.isHooksUseXOpenclawTokenHeader()) {
-                    builder.header("x-openclaw-token", token);
+                    builder.header(OpenClawConstants.HEADER_X_OPENCLAW_TOKEN, token);
                 } else {
                     builder.header("Authorization", "Bearer " + token);
                 }

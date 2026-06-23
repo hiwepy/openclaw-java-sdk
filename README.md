@@ -9,7 +9,7 @@
 | **OpenAI 流式 SSE** | 流式 Chat Completions / OpenResponses | `chatCompletionStream()` / `createResponseStream()` |
 | **Tools Invoke HTTP** | 直接调用单个工具 | `toolInvoke()` |
 | **WebSocket** | 双向实时通信、流式对话、完整 RPC | `ws()` / `wsConnect()` / `wsChatSend()` |
-| **CLI** | 本地 `openclaw` 命令封装 | `cli()` → `OpenClawCli` |
+| **CLI** | 本地 `openclaw` 命令封装 | `cli()` |
 
 Spring Boot 应用请使用 [openclaw-spring-boot-starter](../openclaw-spring-boot-starter)。
 
@@ -23,42 +23,21 @@ import io.github.hiwepy.openclaw.api.model.*;
 
 // 1. 配置
 OpenClawClientConfig config = new OpenClawClientConfig();
-config.
+config.setGatewayBaseUrl("http://localhost:18789");
+config.setGatewayAuthToken("your-gateway-token");
 
-        setGatewayBaseUrl("http://localhost:18789");
-config.
+// 2. 创建客户端
+OpenClawClient client = new OpenClawClient(config);
 
-        setGatewayAuthToken("your-gateway-token");  // 控制面凭证 (gateway.auth.token)
-config.
-
-        setHooksToken("your-hooks-token");           // Webhook 凭证 (hooks.token)
-
-        // 2. 创建客户端
-        OpenClawClient client = new OpenClawClient(config);
-
-        // 3. 调用
-        ChatRequest req = new ChatRequest();
-req.
-
-        setModel("openclaw/default");
-req.
-
-        setMessages(List.of(new ChatMessage("user", "你好")));
-        ChatResponse resp = client.chatCompletion(req);
-System.out.
-
-        println(resp.getChoices().
-
-        get(0).
-
-        getMessage().
-
-        getContent());
+// 3. 调用（简洁写法）
+ChatResponse resp = client.chatCompletion(
+    "openclaw/default", "gpt-4o",
+    List.of(ChatMessage.ofUser("你好"))
+);
+System.out.println(resp.getChoices().get(0).getMessage().getContent());
 
 // 4. 释放
-        client.
-
-        close();
+client.close();
 ```
 
 ---
@@ -80,8 +59,7 @@ SDK 对不同 API 端点使用**不同的凭证**：
 |----------|------|------|
 | `gatewayAuthToken` | 对应 `gateway.auth.token` 或 `OPENCLAW_GATEWAY_TOKEN` | 控制面 HTTP + WS 鉴权 |
 | `gatewayAuthPassword` | 对应 `gateway.auth.password` | 密码模式控制面鉴权 |
-| `hooksToken` | 对应 `hooks.token` | Webhook `Authorization: Bearer`（默认）或 `x-openclaw-token` |
-| `hooksUseXOpenclawTokenHeader` | `true` 时用 `x-openclaw-token`，`false` 时用 `Authorization: Bearer` | Webhook 头选择（二选一，勿同时发） |
+| `hooksToken` | 对应 `hooks.token` | Webhook `Authorization: Bearer` |
 | `apiKey`（兼容） | 未设 `hooksToken` 时的兜底 | 同 Webhook |
 
 ---
@@ -90,45 +68,47 @@ SDK 对不同 API 端点使用**不同的凭证**：
 
 对应文档：[OpenAI Chat Completions](https://docs.openclaw.ai/gateway/openai-http-api)
 
-### Agent 目标约定
+### Agent 与 Model 字段约定
 
-OpenClaw 将 OpenAI `model` 字段解释为 **agent 目标**，而非原始模型 ID：
+SDK 提供了清晰的 `agent` / `model` 分离：
 
-- `"openclaw"` / `"openclaw/default"` → 默认 agent
-- `"openclaw/<agentId>"` → 指定 agent
-- 兼容别名：`"openclaw:<agentId>"`、`"agent:<agentId>"`
+| 字段 | 含义 | 示例 |
+|------|------|------|
+| `agent` | Agent 目标路由 | `"openclaw/default"`、`"openclaw/research"` |
+| `model` | 后端 LLM 模型 | `"gpt-4o"`、`"claude-3-opus"` |
 
-使用 `x-openclaw-model` 头覆盖后端模型（如 `openai/gpt-5.4`）。
+**优先级**：
+1. `agent` 字段 → HTTP body 的 `model`（用于路由）
+2. `model` 字段（若非 Agent 路由）→ `x-openclaw-model` header（用于覆盖后端模型）
 
 ### Chat Completions（非流式）
 
 ```java
 import io.github.hiwepy.openclaw.api.model.*;
 
+// 方式1：Builder（推荐）
+ChatRequest req = ChatRequest.builder()
+    .agent("openclaw/default")
+    .model("gpt-4o")
+    .messages(List.of(
+        ChatMessage.ofSystem("你是一个有用的助手"),
+        ChatMessage.ofUser("今天天气怎么样？")
+    ))
+    .build();
+
+// 方式2：便捷方法（最简洁）
+ChatResponse resp = client.chatCompletion(
+    "openclaw/default", "gpt-4o",
+    List.of(ChatMessage.ofUser("今天天气怎么样？"))
+);
+
+// 方式3：setter
 ChatRequest req = new ChatRequest();
-req.
-
-setModel("openclaw/default");
-req.
-
-setMessages(List.of(
-        new ChatMessage("system", "你是一个有用的助手"),
-    new
-
-ChatCompletionMessage("user","今天天气怎么样？")
-));
-
-// 基本调用
+req.setAgent("openclaw/default");
+req.setModel("gpt-4o");
+req.setMessages(List.of(ChatMessage.ofUser("你好")));
 ChatResponse resp = client.chatCompletion(req);
 String answer = resp.getChoices().get(0).getMessage().getContent();
-
-// 带 OpenClaw 自定义头
-Map<String, String> headers = OpenClawHeaders.builder()
-        .model("openai/gpt-5.4")                    // x-openclaw-model：覆盖后端模型
-        .sessionKey("my-session")                    // x-openclaw-session-key：显式会话路由
-        .messageChannel("slack")                     // x-openclaw-message-channel：通道上下文
-        .build();
-ChatResponse resp2 = client.chatCompletion(req, headers);
 ```
 
 ### Chat Completions（流式 SSE）
@@ -136,102 +116,89 @@ ChatResponse resp2 = client.chatCompletion(req, headers);
 ```java
 import io.github.hiwepy.openclaw.api.sse.*;
 
-ChatCompletionRequest req = new ChatCompletionRequest();
-req.
+ChatRequest req = ChatRequest.builder()
+    .agent("openclaw/default")
+    .model("gpt-4o")
+    .messages(List.of(ChatMessage.ofUser("写一首关于春天的诗")))
+    .build();
 
-setModel("openclaw/default");
-req.
+// 方式1：便捷方法
+StreamingChatResponse stream = client.chatCompletionStream(
+    "openclaw/default", "gpt-4o",
+    List.of(ChatMessage.ofUser("写一首关于春天的诗"))
+);
 
-setMessages(List.of(new ChatCompletionMessage("user", "写一首诗")));
-// req.setStream(true) 会被自动设置
+// 等待完整响应
+ChatChunk result = stream.get();
+System.out.println(result.getChoices().get(0).getDelta().getContent());
 
-Map<String, String> headers = OpenClawHeaders.builder()
-        .model("openai/gpt-5.4")
-        .build();
-
-client.
-
-chatCompletionStream(req, headers, new SseEventHandler() {
-    @Override
-    public void onEvent (SseEvent event){
-        ChatCompletionChunk chunk = (ChatCompletionChunk) event.getParsed();
-        if (chunk != null && chunk.getChoices() != null) {
-            for (ChatCompletionChunk.DeltaChoice choice : chunk.getChoices()) {
-                if (choice.getDelta() != null && choice.getDelta().getContent() != null) {
-                    System.out.print(choice.getDelta().getContent());
-                }
-            }
-        }
-    }
-
-    @Override
-    public void onComplete () {
-        System.out.println("\n[流式完成]");
-    }
-
-    @Override
-    public void onError (Throwable error){
-        System.err.println("流式错误: " + error.getMessage());
-    }
-});
+// 方式2：消费增量
+StreamingChatResponse stream2 = client.chatCompletionStream(req)
+    .onDelta(delta -> System.out.print(delta));
+ChatChunk finalChunk = stream2.get();
 ```
 
 ### 流式工具调用
 
 ```java
+import io.github.hiwepy.openclaw.api.model.Tools;
+
 // 定义客户端工具
 List<Map<String, Object>> tools = List.of(
-    Map.of(
-        "type", "function",
-        "function", Map.of(
-            "name", "get_weather",
-            "description", "获取指定城市的天气",
-            "parameters", Map.of(
-                "type", "object",
-                "properties", Map.of(
-                    "city", Map.of("type", "string", "description", "城市名称")
-                ),
-                "required", List.of("city")
-            )
-        )
-    )
+        Tools.function("get_weather", "获取指定城市的天气")
+                .param("city", "string", "城市名称", true)
+                .build()
 );
 
-ChatCompletionRequest req = new ChatCompletionRequest();
-req.setModel("openclaw/default");
-req.setMessages(List.of(new ChatCompletionMessage("user", "北京今天天气如何？")));
-req.setTools(tools);
-req.setToolChoice("auto");
+        ChatRequest req = ChatRequest.builder()
+                .agent("openclaw/default")
+                .model("gpt-4o")
+                .messages(List.of(ChatMessage.ofUser("北京今天天气如何？")))
+                .tools(tools)
+                .toolChoice("auto")
+                .build();
 
-client.chatCompletionStream(req, new SseEventHandler() {
-    @Override
-    public void onEvent(SseEvent event) {
-        ChatCompletionChunk chunk = (ChatCompletionChunk) event.getParsed();
-        if (chunk == null || chunk.getChoices() == null) return;
-        for (ChatCompletionChunk.DeltaChoice choice : chunk.getChoices()) {
-            // 文本内容
-            if (choice.getDelta() != null && choice.getDelta().getContent() != null) {
-                System.out.print(choice.getDelta().getContent());
-            }
-            // 工具调用增量
-            if (choice.getDelta() != null && choice.getDelta().getToolCalls() != null) {
-                for (ChatCompletionMessage.ToolCall tc : choice.getDelta().getToolCalls()) {
-                    System.out.println("[工具调用] " + tc.getFunction().getName()
-                        + " args=" + tc.getFunction().getArguments());
-                }
-            }
-            // 完成原因
-            if ("tool_calls".equals(choice.getFinishReason())) {
-                System.out.println("\n[需要执行工具调用并回传结果]");
-            }
-        }
-    }
+        StreamingChatResponse stream = client.chatCompletionStream(req);
 
-    @Override
-    public void onComplete() { System.out.println("[完成]"); }
-    @Override
-    public void onError(Throwable error) { error.printStackTrace(); }
-});
+// 处理工具调用
+for(
+        ChatMessage.ToolCall call :Tools.
+
+        extractToolCalls(result.getChoices().
+
+        get(0).
+
+        getMessage())){
+        Map<String, Object> args = Tools.parseArgsAsMap(call);
+        String city = (String) args.get("city");
+
+        // 执行工具...
+        String weatherResult = executeGetWeather(city);
+
+        // 构建工具结果消息
+        ChatMessage toolResult = Tools.toolResult(call.getId(), weatherResult);
+
+        // 继续对话（包含工具结果）
+        List<ChatMessage> messagesWithResult = new java.util.ArrayList<>(req.getMessages());
+    messagesWithResult.
+
+        add(result.getChoices().
+
+        get(0).
+
+        getMessage()); // assistant tool call
+        messagesWithResult.
+
+        add(toolResult); // tool result
+
+        ChatRequest followUp = ChatRequest.builder()
+                .agent("openclaw/default")
+                .model("gpt-4o")
+                .messages(messagesWithResult)
+                .build();
+
+        ChatResponse finalResp = client.chatCompletion(followUp);
+}
 ```
 
 ### 获取模型列表
@@ -249,18 +216,13 @@ ModelsResponse.ModelData model = client.openai().getModel("openclaw/default");
 ### Embeddings
 
 ```java
-EmbeddingsRequest req = new EmbeddingsRequest();
-req.setModel("openclaw/default");
-req.setInput(List.of("hello", "world"));
-
-// 无自定义头
-EmbeddingsResponse resp = client.createEmbeddings(req);
-
-// 指定嵌入模型
-Map<String, String> headers = OpenClawHeaders.builder()
-    .model("openai/text-embedding-3-small")
+EmbeddingsRequest req = EmbeddingsRequest.builder()
+    .agent("openclaw/default")
+    .model("text-embedding-3-small")  // 指定嵌入模型
+    .input(List.of("hello", "world"))
     .build();
-EmbeddingsResponse resp2 = client.createEmbeddings(req, headers);
+
+EmbeddingsResponse resp = client.createEmbeddings(req);
 ```
 
 ### 会话行为
@@ -269,10 +231,10 @@ EmbeddingsResponse resp2 = client.createEmbeddings(req, headers);
 
 ```java
 // 方式 1：通过 user 字段派生稳定 session key
-ChatCompletionRequest req = new ChatCompletionRequest();
-req.setModel("openclaw/default");
-req.setUser("conv:my-conversation-id");  // 同一对话线程复用相同值
-req.setMessages(List.of(new ChatCompletionMessage("user", "继续之前的讨论")));
+ChatResponse resp = client.chatCompletion(
+    "openclaw/default", "gpt-4o", "conv:my-conversation-id",
+    List.of(ChatMessage.ofUser("继续之前的讨论"))
+);
 
 // 方式 2：通过 x-openclaw-session-key 显式控制
 Map<String, String> headers = OpenClawHeaders.builder()
@@ -289,38 +251,34 @@ Map<String, String> headers = OpenClawHeaders.builder()
 ### 非流式
 
 ```java
-import io.github.hiwepy.openclaw.responses.model.*;
-
-ResponseRequest req = new ResponseRequest();
-req.setModel("openclaw");
-req.setInput("分析今天的任务");
+ResponseRequest req = ResponseRequest.builder()
+    .agent("openclaw/default")
+    .model("gpt-4o")
+    .input("分析今天的任务")
+    .build();
 
 ResponseResult result = client.createResponse(req);
-System.out.println("状态: " + result.getStatus());  // completed
+System.out.println("状态: " + result.getStatus());
 ```
 
 ### Item-based 输入（图片 + 文件）
 
 ```java
-ResponseRequest req = new ResponseRequest();
-req.setModel("openclaw/default");
-
-// 使用 Item 数组作为输入
-List<Map<String, Object>> input = List.of(
-    // 系统指令
-    Map.of("type", "message", "role", "system",
-           "content", "你是一个图片分析助手"),
-    // 图片输入（URL）
-    Map.of("type", "input_image",
-           "source", Map.of("type", "url", "url", "https://example.com/photo.jpg")),
-    // 文件输入（base64）
-    Map.of("type", "input_file",
-           "source", Map.of("type", "base64", "media_type", "application/pdf",
-                            "data", "base64-encoded-content", "filename", "report.pdf")),
-    // 用户消息
-    Map.of("type", "message", "role", "user", "content", "描述这张图片的内容")
-);
-req.setInput(input);
+ResponseRequest req = ResponseRequest.builder()
+    .agent("openclaw/default")
+    .input(List.of(
+        ResponseRequest.InputItem.message()
+            .role("system")
+            .content("你是一个图片分析助手")
+            .build(),
+        ResponseRequest.InputItem.imageUrl("https://example.com/photo.jpg")
+            .build(),
+        ResponseRequest.InputItem.message()
+            .role("user")
+            .content("描述这张图片的内容")
+            .build()
+    ))
+    .build();
 
 ResponseResult result = client.createResponse(req);
 ```
@@ -328,70 +286,14 @@ ResponseResult result = client.createResponse(req);
 ### 流式
 
 ```java
-ResponseRequest req = new ResponseRequest();
-req.setModel("openclaw");
-req.setInput("写一个项目计划");
-
-Map<String, String> headers = OpenClawHeaders.builder()
-    .sessionKey("planning-session")
+ResponseRequest req = ResponseRequest.builder()
+    .agent("openclaw/default")
+    .input("写一个项目计划")
     .build();
 
-client.createResponseStream(req, headers, new SseEventHandler() {
-    @Override
-    public void onEvent(SseEvent event) {
-        // event.getEvent() 为事件类型：response.output_text.delta 等
-        // event.getData() 为原始 JSON
-        String eventType = event.getEvent();
-        if ("response.output_text.delta".equals(eventType)) {
-            // 解析 delta 文本
-            try {
-                var node = new com.fasterxml.jackson.databind.ObjectMapper().readTree(event.getData());
-                if (node.has("delta")) {
-                    System.out.print(node.get("delta").asText());
-                }
-            } catch (Exception ignored) {}
-        }
-    }
-
-    @Override
-    public void onComplete() { System.out.println("\n[完成]"); }
-    @Override
-    public void onError(Throwable error) { error.printStackTrace(); }
-});
-```
-
-### 工具调用回传
-
-```java
-// 定义工具
-List<Map<String, Object>> tools = List.of(
-    Map.of("type", "function", "name", "get_weather",
-           "description", "获取天气", "parameters", Map.of(...))
-);
-
-ResponseRequest req = new ResponseRequest();
-req.setModel("openclaw");
-req.setInput("北京天气");
-req.setTools(tools);
-req.setToolChoice("auto");
-
-ResponseResult result = client.createResponse(req);
-
-// 检查是否有 function_call 输出
-for (Map<String, Object> item : result.getOutput()) {
-    if ("function_call".equals(item.get("type"))) {
-        String callId = (String) item.get("call_id");
-        // 执行工具，发送回传
-        ResponseRequest followUp = new ResponseRequest();
-        followUp.setModel("openclaw");
-        followUp.setInput(List.of(
-            Map.of("type", "function_call_output",
-                   "call_id", callId,
-                   "output", "{\"temperature\": \"25°C\", \"condition\": \"晴\"}")
-        ));
-        ResponseResult finalResult = client.createResponse(followUp);
-    }
-}
+StreamingChatResponse stream = client.chatCompletionStream(req);
+stream.onDelta(delta -> System.out.print(delta));
+ChatChunk result = stream.get();
 ```
 
 ---
@@ -401,12 +303,11 @@ for (Map<String, Object> item : result.getOutput()) {
 对应文档：[Tools Invoke API](https://docs.openclaw.ai/gateway/tools-invoke-http-api)
 
 ```java
-import io.github.hiwepy.openclaw.tools.model.*;
-
-ToolInvokeRequest req = new ToolInvokeRequest();
-req.setTool("sessions_list");
-req.setAction("json");
-req.setArgs(Map.of());
+ToolInvokeRequest req = ToolInvokeRequest.builder()
+    .tool("sessions_list")
+    .action("json")
+    .args(Map.of())
+    .build();
 
 ToolInvokeResult result = client.toolInvoke(req);
 if (Boolean.TRUE.equals(result.getOk())) {
@@ -420,7 +321,7 @@ if (Boolean.TRUE.equals(result.getOk())) {
 
 ## WebSocket 控制面
 
-对应文档：[Gateway Protocol](https://docs.openclaw.ai/gateway/protocol) / [Bridge Protocol (legacy)](https://docs.openclaw.ai/gateway/bridge-protocol)
+对应文档：[Gateway Protocol](https://docs.openclaw.ai/gateway/protocol)
 
 ```java
 import io.github.hiwepy.openclaw.ws.*;
@@ -429,7 +330,6 @@ import io.github.hiwepy.openclaw.ws.protocol.*;
 // 连接并握手
 HelloOk hello = client.wsConnect();
 System.out.println("协议版本: " + hello.getProtocol());
-System.out.println("服务端版本: " + hello.getServer().getVersion());
 
 // 流式对话
 client.wsChatSend("你好", new ChatStreamHandler() {
@@ -446,20 +346,6 @@ client.wsChatSend("my-session", "继续讨论", handler);
 
 // 非流式 RPC：向指定会话发消息
 SessionsSendResult sendResult = client.wsSessionsSend("my-session", "你好");
-
-// 添加事件监听器
-client.addWsListener(new OpenClawWsListener() {
-    @Override
-    public void onConnected(HelloOk helloOk) { System.out.println("已连接"); }
-    @Override
-    public void onDisconnected(int code, String reason, boolean remote) { System.out.println("断开"); }
-    @Override
-    public void onEvent(EventFrame frame) { System.out.println("事件: " + frame.getEvent()); }
-    @Override
-    public void onResponse(ResponseFrame frame) { System.out.println("响应: " + frame.getId()); }
-    @Override
-    public void onError(Exception ex) { ex.printStackTrace(); }
-});
 ```
 
 ---
@@ -467,20 +353,16 @@ client.addWsListener(new OpenClawWsListener() {
 ## HTTP Webhook（`/hooks/*`）
 
 ```java
-import io.github.hiwepy.openclaw.*;
-
-InvokeAgentRequest req = new InvokeAgentRequest();
-req.setMessage("总结今天的任务");
+InvokeAgentRequest req = InvokeAgentRequest.builder()
+    .message("总结今天的任务")
+    .build();
 
 // 一次性调用
 InvokeAgentResult result = client.agentOneShot(req);
 
-// 带 peer
-InvokeAgentResult result2 = client.agentOneShotForPeer(userId, req);
-
 // 稳定多轮会话
-InvokeAgentResult result3 = client.agentWithStableSession(
-    "xiaohongshu-data-assistant", userId, req);
+InvokeAgentResult result2 = client.agentWithStableSession(
+    "agent-id", userId, req);
 
 // 注入系统事件
 client.wake("提醒：3点有会议", "now");
@@ -507,88 +389,40 @@ Gateway 建议：`hooks.allowRequestSessionKey: true`，`hooks.allowedSessionKey
 
 ```java
 Map<String, String> headers = OpenClawHeaders.builder()
-    .model("openai/gpt-5.4")                              // x-openclaw-model
-    .agentId("research")                                   // x-openclaw-agent-id
-    .sessionKey("my-session")                              // x-openclaw-session-key
-    .messageChannel("slack")                               // x-openclaw-message-channel
-    .scopes("operator.read,operator.write")                // x-openclaw-scopes
+    .model("gpt-4o")                              // x-openclaw-model
+    .agentId("research")                          // x-openclaw-agent-id
+    .sessionKey("my-session")                     // x-openclaw-session-key
+    .messageChannel("slack")                      // x-openclaw-message-channel
+    .scopes("operator.read,operator.write")       // x-openclaw-scopes
     .build();
 
 // 用于任何 HTTP API
 client.chatCompletion(req, headers);
-client.chatCompletionStream(req, headers, handler);
-client.createResponse(req, headers);
-client.createResponseStream(req, headers, handler);
-client.openai().createEmbeddings(req, headers);
 ```
 
 | 头部 | 常量 | 用途 |
 |------|------|------|
-| `x-openclaw-model` | `OpenClawHeaders.X_OPENCLAW_MODEL` | 覆盖后端模型（如 `openai/gpt-5.4`） |
+| `x-openclaw-model` | `OpenClawHeaders.X_OPENCLAW_MODEL` | 覆盖后端模型 |
 | `x-openclaw-agent-id` | `OpenClawHeaders.X_OPENCLAW_AGENT_ID` | 兼容性 agent 覆盖 |
 | `x-openclaw-session-key` | `OpenClawHeaders.X_OPENCLAW_SESSION_KEY` | 显式会话路由 |
 | `x-openclaw-message-channel` | `OpenClawHeaders.X_OPENCLAW_MESSAGE_CHANNEL` | 合成入口通道上下文 |
-| `x-openclaw-scopes` | `OpenClawHeaders.X_OPENCLAW_SCOPES` | 权限范围声明（共享密钥模式下被忽略） |
-
----
-
-## CLI 封装
-
-对应文档：[CLI Reference](https://docs.openclaw.ai/cli) / [CLI Backends](https://docs.openclaw.ai/gateway/cli-backends)
-
-全局参数（`--dev`、`--profile`、`--container`、`--no-color`）使用 [`OpenClawCliRequest`](src/main/java/io/github/hiwepy/openclaw/cli/OpenClawCliRequest.java) 通过 [`OpenClawCli#execute`](src/main/java/io/github/hiwepy/openclaw/cli/OpenClawCli.java) 调用。
-
-```java
-// 版本
-OpenClawCliResult version = client.cli().version();
-
-// Gateway 健康检查
-GatewayRpcOptions rpc = GatewayRpcOptions.builder()
-    .url("ws://127.0.0.1:18789")
-    .token("my-token")
-    .build();
-OpenClawCliResult health = client.cli().gatewayHealth(rpc);
-
-// Agent 命令
-AgentOptions agentOpts = AgentOptions.builder()
-    .agent("ops")
-    .message("总结日志")
-    .build();
-OpenClawCliResult agentResult = client.cli().agent(agentOpts);
-```
-
-| `OpenClawCli` 方法 | 官方文档 |
-|-------------------|----------|
-| `version()` / `help()` | [CLI Reference](https://docs.openclaw.ai/cli) |
-| `gateway` / `gatewayHealth` / `gatewayStatus` / `gatewayProbe` | [gateway](https://docs.openclaw.ai/cli/gateway) |
-| `daemon` | [daemon](https://docs.openclaw.ai/cli/daemon) |
-| `health` / `status` / `doctor` / `logs` | [health](https://docs.openclaw.ai/cli/health) |
-| `config` / `configure` / `setup` / `onboard` / `docs` | [config](https://docs.openclaw.ai/cli/config) |
-| `agent` / `agents` / `sessions` / `skills` / `memory` / `approvals` | [agent](https://docs.openclaw.ai/cli/agent) |
-| `channels` / `message` / `pairing` / `qr` | [channels](https://docs.openclaw.ai/cli/channels) |
-| `node` / `nodes` / `devices` | [nodes](https://docs.openclaw.ai/cli/nodes) |
-| `browser` / `mcp` / `plugins` | [browser](https://docs.openclaw.ai/cli/browser) |
-| `cron` / `hooks` / `webhooks` / `flows` | [cron](https://docs.openclaw.ai/cli/cron) |
-| `models` / `security` / `secrets` / `sandbox` | [models](https://docs.openclaw.ai/cli/models) |
-| `backup` / `update` / `uninstall` / `reset` | [backup](https://docs.openclaw.ai/cli/backup) |
-| `completion` / `tui` / `dashboard` / `directory` / `dns` / `system` | [completion](https://docs.openclaw.ai/cli/completion) |
-| `voicecall` / `clawbot` / `acp` | [voicecall](https://docs.openclaw.ai/cli/voicecall) |
+| `x-openclaw-scopes` | `OpenClawHeaders.X_OPENCLAW_SCOPES` | 权限范围声明 |
 
 ---
 
 ## 发布与 JDK
 
 - 本模块要求 **JDK 17**（见 `pom.xml` 中 `maven-enforcer-plugin`）。
-- 发布快照/正式版：配置 `~/.m2/settings.xml` 中与 `distributionManagement` 匹配的 server 凭据后执行：
+- 发布快照/正式版：
 
 ```bash
 mvn clean deploy -DskipTests
 ```
 
-- 发布 [openclaw-spring-boot-starter](../openclaw-spring-boot-starter) 各 Spring Boot 线时，请在**对应分支**使用**该线要求的 JDK**（通常 2.x 为 JDK 8、3.x/4.x 为 17+，以各分支 `pom.xml` 为准），在 monorepo 根目录执行例如：
+- 发布 [openclaw-spring-boot-starter](../openclaw-spring-boot-starter) 各 Spring Boot 线时：
 
 ```bash
-./release-starter-versions.sh openclaw-spring-boot-starter 2.7.x 20260516
+./release-starter-versions.sh openclaw-spring-boot-starter 3.3.x 20251227
 ```
 
-执行前请确认该分支 `pom.xml` 中 **`openclaw-java-sdk.version` 与已部署的 SDK 版本一致**（`release-starter-versions.sh` 主要调整 parent 与构件版本，不一定会改传递依赖版本）。
+执行前请确认该分支 `pom.xml` 中 **`openclaw-java-sdk.version` 与已部署的 SDK 版本一致**。

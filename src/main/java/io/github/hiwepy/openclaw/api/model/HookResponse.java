@@ -1,4 +1,4 @@
-package io.github.hiwepy.openclaw.api;
+package io.github.hiwepy.openclaw.api.model;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -8,7 +8,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class InvokeAgentResult {
+public class HookResponse {
 
     /** 是否整体成功 */
     private boolean success;

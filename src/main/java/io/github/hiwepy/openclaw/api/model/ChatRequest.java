@@ -1,9 +1,7 @@
 package io.github.hiwepy.openclaw.api.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.List;
 import java.util.Map;
@@ -12,13 +10,29 @@ import java.util.Map;
  * OpenAI Chat Completions API 请求体。
  * <p>
  * 对应 {@code POST /v1/chat/completions} 的请求 JSON。
- * OpenClaw Gateway 将 {@code model} 字段解释为 <b>agent 目标</b>，而非原始模型 ID：
- * <ul>
- *   <li>{@code "openclaw"} 或 {@code "openclaw/default"} - 路由到默认 agent</li>
- *   <li>{@code "openclaw/<agentId>"} - 路由到指定 agent</li>
- * </ul>
- * 如需覆盖后端模型，请使用 HTTP 头 {@code x-openclaw-model}（如 {@code openai/gpt-5.4}）。
  * </p>
+ *
+ * <h3>字段语义（重要）</h3>
+ * <ul>
+ *   <li>{@code agent} - Agent 目标路由（如 {@code "openclaw/default"}）
+ *   <li>{@code model} - <b>后端 LLM 模型</b>（如 {@code "gpt-4o"}）
+ * </ul>
+ *
+ * <h3>用法示例</h3>
+ * <pre>{@code
+ * // 方式1：使用 Builder
+ * ChatRequest request = ChatRequest.builder()
+ *     .agent("openclaw/default")
+ *     .model("gpt-4o")
+ *     .messages(List.of(ChatMessage.ofUser("Hello")))
+ *     .build();
+ *
+ * // 方式2：使用 setter
+ * ChatRequest request = new ChatRequest();
+ * request.setAgent("openclaw/default");
+ * request.setModel("gpt-4o");
+ * request.setMessages(List.of(ChatMessage.ofUser("Hello")));
+ * }</pre>
  *
  * <h3>会话行为</h3>
  * <p>默认每次请求无状态（新会话 key）。若请求包含 {@code user} 字符串，
@@ -26,9 +40,8 @@ import java.util.Map;
  *
  * @see <a href="https://docs.openclaw.ai/gateway/openai-http-api">OpenAI Chat Completions</a>
  */
-@Getter
-@Setter
-@NoArgsConstructor
+@Data
+@Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ChatRequest {
 
@@ -36,6 +49,13 @@ public class ChatRequest {
      * Agent 目标标识。
      * <p>使用 {@code "openclaw"}、{@code "openclaw/default"} 或 {@code "openclaw/<agentId>"}。
      * 兼容别名 {@code "openclaw:<agentId>"} 和 {@code "agent:<agentId>"} 仍被接受。</p>
+     */
+    private String agent;
+
+    /**
+     * 后端 LLM 模型标识。
+     * <p>对应 OpenAI 的标准 model 字段语义，如 {@code "gpt-4o"}、{@code "claude-3-opus"} 等。
+     * 若未指定，使用 Agent 配置的默认模型。</p>
      */
     private String model;
 

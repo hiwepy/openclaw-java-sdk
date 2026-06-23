@@ -3,6 +3,7 @@ package io.github.hiwepy.openclaw.api.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.github.hiwepy.openclaw.api.OpenClawConstants;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -38,7 +39,7 @@ public class ChatResponse {
     private String id;
 
     /** 对象类型，固定为 {@code "chat.completion"}。 */
-    private String object;
+    private String object = OpenClawConstants.OBJECT_CHAT_COMPLETION;
 
     /** 创建时间戳（Unix epoch 秒）。 */
     private Long created;
@@ -83,6 +84,21 @@ public class ChatResponse {
          */
         @JsonProperty("finish_reason")
         private String finishReason;
+
+        /** 判定是否为正常完成 */
+        public boolean isStop() {
+            return OpenClawConstants.FINISH_REASON_STOP.equals(finishReason);
+        }
+
+        /** 判定是否为工具调用 */
+        public boolean isToolCalls() {
+            return OpenClawConstants.FINISH_REASON_TOOL_CALLS.equals(finishReason);
+        }
+
+        /** 判定是否为长度限制 */
+        public boolean isLength() {
+            return OpenClawConstants.FINISH_REASON_LENGTH.equals(finishReason);
+        }
     }
 
     /**

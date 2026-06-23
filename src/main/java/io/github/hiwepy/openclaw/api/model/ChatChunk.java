@@ -1,5 +1,6 @@
 package io.github.hiwepy.openclaw.api.model;
 
+import io.github.hiwepy.openclaw.api.OpenClawConstants;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -39,7 +40,7 @@ public class ChatChunk {
     private String id;
 
     /** 对象类型，固定为 {@code "chat.completion.chunk"}。 */
-    private String object;
+    private String object = OpenClawConstants.OBJECT_CHAT_COMPLETION_CHUNK;
 
     /** 创建时间戳（Unix epoch 秒）。 */
     private Long created;
@@ -77,6 +78,11 @@ public class ChatChunk {
          */
         @JsonProperty("finish_reason")
         private String finishReason;
+
+        /** 判定是否为工具调用完成 */
+        public boolean isToolCalls() {
+            return OpenClawConstants.FINISH_REASON_TOOL_CALLS.equals(finishReason);
+        }
     }
 
     /**

@@ -59,13 +59,74 @@ public class OpenClawOpenAiHttpClient implements AutoCloseable {
     // ============================================================
 
     public ChatResponse chatCompletion(ChatRequest request) {
-        return chatCompletion(request, null);
+        return chatCompletion0(request, null);
     }
 
-    public ChatResponse chatCompletion(ChatRequest request, Map<String, String> headers) {
+    public ChatResponse chatCompletion(ChatRequest request, OpenClawHeaders.Builder headers) {
+        return chatCompletion0(request, headers.build());
+    }
+
+    private ChatResponse chatCompletion0(ChatRequest request, Map<String, String> headers) {
         Objects.requireNonNull(request, "request");
-        String responseBody = postJson("/v1/chat/completions", request, headers);
+        // 处理 agent 和 model 字段
+        headers = buildChatHeaders(request, headers);
+        // 使用 agent 字段（如果有）作为 HTTP body 的 model
+        String bodyModel = resolveRequestModel(request);
+        ChatRequest normalized = ChatRequest.builder()
+                .model(bodyModel)
+                .messages(request.getMessages())
+                .stream(request.getStream())
+                .streamOptions(request.getStreamOptions())
+                .tools(request.getTools())
+                .toolChoice(request.getToolChoice())
+                .user(request.getUser())
+                .maxCompletionTokens(request.getMaxCompletionTokens())
+                .maxTokens(request.getMaxTokens())
+                .temperature(request.getTemperature())
+                .topP(request.getTopP())
+                .frequencyPenalty(request.getFrequencyPenalty())
+                .presencePenalty(request.getPresencePenalty())
+                .seed(request.getSeed())
+                .stop(request.getStop())
+                .build();
+        String responseBody = postJson(OpenClawConstants.ENDPOINT_CHAT_COMPLETIONS, normalized, headers);
         return parse(responseBody, ChatResponse.class, "chat completion");
+    }
+
+    /**
+     * 构建请求头，处理 agent 和 model 字段。
+     */
+    private Map<String, String> buildChatHeaders(ChatRequest request, Map<String, String> existingHeaders) {
+        Map<String, String> headers = existingHeaders != null ? new java.util.HashMap<>(existingHeaders) : new java.util.HashMap<>();
+        // 如果有独立的 model 字段（非 agent 路由），设置 x-openclaw-model header
+        if (request.getModel() != null && !isAgentTarget(request.getModel())) {
+            headers.put(OpenClawConstants.HEADER_X_OPENCLAW_MODEL, request.getModel());
+        }
+        return headers.isEmpty() ? null : headers;
+    }
+
+    /**
+     * 判断 model 值是否为 Agent 目标路由。
+     */
+    private boolean isAgentTarget(String value) {
+        if (value == null) {
+            return false;
+        }
+        return value.startsWith(OpenClawConstants.AGENT_PREFIX_OPENCLAW) ||
+               value.startsWith(OpenClawConstants.AGENT_PREFIX_AGENT_COLON) ||
+               value.startsWith(OpenClawConstants.AGENT_PREFIX_OPENCLAW_COLON);
+    }
+
+    /**
+     * 解析请求中的 model 字段：
+     * - 如果有 agent 字段，优先使用 agent
+     * - 否则使用 model 字段
+     */
+    private String resolveRequestModel(ChatRequest request) {
+        if (request.getAgent() != null) {
+            return request.getAgent();
+        }
+        return request.getModel();
     }
 
     /**
@@ -73,19 +134,43 @@ public class OpenClawOpenAiHttpClient implements AutoCloseable {
      * <p>返回 OkHttp Response，调用方用 {@code response.body().source()} 消费 SSE 流。</p>
      */
     public Response chatCompletionStream(ChatRequest request) {
-        return chatCompletionStream(request, null);
+        return this.chatCompletionStream(request, null);
     }
 
     public Response chatCompletionStream(ChatRequest request, Map<String, String> headers) {
         Objects.requireNonNull(request, "request");
         request.setStream(true);
-        Request.Builder builder = authedBuilder(resolveUrl("/v1/chat/completions"))
+        // 处理 agent 和 model 字段
+        headers = buildChatHeaders(request, headers);
+        String bodyModel = resolveRequestModel(request);
+        ChatRequest normalized = ChatRequest.builder()
+                .model(bodyModel)
+                .messages(request.getMessages())
+                .stream(true)
+                .streamOptions(request.getStreamOptions())
+                .tools(request.getTools())
+                .toolChoice(request.getToolChoice())
+                .user(request.getUser())
+                .maxCompletionTokens(request.getMaxCompletionTokens())
+                .maxTokens(request.getMaxTokens())
+                .temperature(request.getTemperature())
+                .topP(request.getTopP())
+                .frequencyPenalty(request.getFrequencyPenalty())
+                .presencePenalty(request.getPresencePenalty())
+                .seed(request.getSeed())
+                .stop(request.getStop())
+                .build();
+        Request.Builder builder = authedBuilder(resolveUrl(OpenClawConstants.ENDPOINT_CHAT_COMPLETIONS))
                 .header("Accept", "text/event-stream");
         if (headers != null) {
-            headers.forEach((k, v) -> { if (k != null && v != null) builder.header(k, v); });
+            headers.forEach((k, v) -> {
+                if (k != null && v != null) {
+                    builder.header(k, v);
+                }
+            });
         }
         try {
-            Request req = builder.post(RequestBody.create(objectMapper.writeValueAsString(request), JSON)).build();
+            Request req = builder.post(RequestBody.create(objectMapper.writeValueAsString(normalized), JSON)).build();
             Response response = httpClient.newCall(req).execute();
             if (!response.isSuccessful()) {
                 String body = response.body() != null ? response.body().string() : "";
@@ -105,13 +190,13 @@ public class OpenClawOpenAiHttpClient implements AutoCloseable {
     // ============================================================
 
     public ModelsResponse listModels() {
-        return parse(getJson("/v1/models"), ModelsResponse.class, "models");
+        return parse(getJson(OpenClawConstants.ENDPOINT_MODELS), ModelsResponse.class, "models");
     }
 
     public ModelsResponse.ModelData getModel(String modelId) {
         Objects.requireNonNull(modelId, "modelId");
         String encodedId = URLEncoder.encode(modelId, StandardCharsets.UTF_8).replace("+", "%20");
-        return parse(getJson("/v1/models/" + encodedId), ModelsResponse.ModelData.class, "model");
+        return parse(getJson(OpenClawConstants.ENDPOINT_MODELS + "/" + encodedId), ModelsResponse.ModelData.class, "model");
     }
 
     // ============================================================
@@ -120,7 +205,29 @@ public class OpenClawOpenAiHttpClient implements AutoCloseable {
 
     public EmbeddingsResponse createEmbeddings(EmbeddingsRequest request) {
         Objects.requireNonNull(request, "request");
-        return parse(postJson("/v1/embeddings", request), EmbeddingsResponse.class, "embeddings");
+        // 处理 agent 和 model 字段
+        Map<String, String> headers = buildEmbeddingsHeaders(request);
+        String bodyModel = resolveEmbeddingsModel(request);
+        EmbeddingsRequest normalized = EmbeddingsRequest.builder()
+                .model(bodyModel)
+                .input(request.getInput())
+                .build();
+        return parse(postJson(OpenClawConstants.ENDPOINT_EMBEDDINGS, normalized, headers), EmbeddingsResponse.class, "embeddings");
+    }
+
+    private Map<String, String> buildEmbeddingsHeaders(EmbeddingsRequest request) {
+        Map<String, String> headers = new java.util.HashMap<>();
+        if (request.getModel() != null && !isAgentTarget(request.getModel())) {
+            headers.put(OpenClawConstants.HEADER_X_OPENCLAW_MODEL, request.getModel());
+        }
+        return headers.isEmpty() ? null : headers;
+    }
+
+    private String resolveEmbeddingsModel(EmbeddingsRequest request) {
+        if (request.getAgent() != null) {
+            return request.getAgent();
+        }
+        return request.getModel();
     }
 
     // ============================================================
@@ -129,7 +236,101 @@ public class OpenClawOpenAiHttpClient implements AutoCloseable {
 
     public ResponseResult createResponse(ResponseRequest request) {
         Objects.requireNonNull(request, "request");
-        return parse(postJson("/v1/responses", request), ResponseResult.class, "response");
+        // 处理 agent 和 model 字段
+        Map<String, String> headers = buildResponseHeaders(request);
+        String bodyModel = resolveResponseModel(request);
+        ResponseRequest normalized = ResponseRequest.builder()
+                .model(bodyModel)
+                .input(request.getInput())
+                .instructions(request.getInstructions())
+                .tools(request.getTools())
+                .toolChoice(request.getToolChoice())
+                .stream(request.getStream())
+                .maxOutputTokens(request.getMaxOutputTokens())
+                .temperature(request.getTemperature())
+                .topP(request.getTopP())
+                .user(request.getUser())
+                .previousResponseId(request.getPreviousResponseId())
+                .build();
+        return parse(postJson(OpenClawConstants.ENDPOINT_RESPONSES, normalized, headers), ResponseResult.class, "response");
+    }
+
+    private Map<String, String> buildResponseHeaders(ResponseRequest request) {
+        Map<String, String> headers = new java.util.HashMap<>();
+        if (request.getModel() != null && !isAgentTarget(request.getModel())) {
+            headers.put(OpenClawConstants.HEADER_X_OPENCLAW_MODEL, request.getModel());
+        }
+        return headers.isEmpty() ? null : headers;
+    }
+
+    private String resolveResponseModel(ResponseRequest request) {
+        if (request.getAgent() != null) {
+            return request.getAgent();
+        }
+        return request.getModel();
+    }
+
+    /**
+     * 流式 OpenResponses 请求。
+     * <p>
+     * 返回 OkHttp Response，调用方用 {@code response.body().source()} 消费 SSE 流。
+     * 流式事件类型：{@code response.created}、{@code response.in_progress}、{@code response.output_item.added} 等。
+     * 流以 {@code data: [DONE]} 结束。
+     * </p>
+     *
+     * @param request 请求体
+     * @return OkHttp 响应
+     */
+    public Response createResponseStream(ResponseRequest request) {
+        return createResponseStream(request, (Map<String, String>) null);
+    }
+
+    public Response createResponseStream(ResponseRequest request, Map<String, String> headers) {
+        Objects.requireNonNull(request, "request");
+        request.setStream(true);
+        headers = buildResponseHeaders(request);
+        String bodyModel = resolveResponseModel(request);
+        ResponseRequest normalized = ResponseRequest.builder()
+                .model(bodyModel)
+                .input(request.getInput())
+                .instructions(request.getInstructions())
+                .tools(request.getTools())
+                .toolChoice(request.getToolChoice())
+                .stream(true)
+                .maxOutputTokens(request.getMaxOutputTokens())
+                .temperature(request.getTemperature())
+                .topP(request.getTopP())
+                .user(request.getUser())
+                .previousResponseId(request.getPreviousResponseId())
+                .build();
+        Request.Builder builder = authedBuilder(resolveUrl(OpenClawConstants.ENDPOINT_RESPONSES))
+                .header("Accept", "text/event-stream");
+        if (headers != null) {
+            headers.forEach((k, v) -> {
+                if (k != null && v != null) builder.header(k, v);
+            });
+        }
+        try {
+            Request req = builder.post(RequestBody.create(objectMapper.writeValueAsString(normalized), JSON)).build();
+            Response response = httpClient.newCall(req).execute();
+            if (!response.isSuccessful()) {
+                String body = response.body() != null ? response.body().string() : "";
+                response.close();
+                throw new OpenClawHttpException("Stream returned status " + response.code(), response.code(), body);
+            }
+            return response;
+        } catch (OpenClawHttpException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new OpenClawHttpException("Stream request failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 流式 OpenResponses 请求（使用 OpenClawHeaders.Builder）。
+     */
+    public Response createResponseStream(ResponseRequest request, OpenClawHeaders.Builder headers) {
+        return createResponseStream(request, headers != null ? headers.build() : null);
     }
 
     /**

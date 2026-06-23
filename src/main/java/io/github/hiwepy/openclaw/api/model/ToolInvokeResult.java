@@ -2,6 +2,7 @@ package io.github.hiwepy.openclaw.api.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.github.hiwepy.openclaw.api.OpenClawConstants;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -31,6 +32,15 @@ import lombok.Setter;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ToolInvokeResult {
+
+    /** 错误类型：未找到 */
+    public static final String ERROR_TYPE_NOT_FOUND = "not_found";
+
+    /** 错误类型：无效请求 */
+    public static final String ERROR_TYPE_INVALID_REQUEST = "invalid_request_error";
+
+    /** 错误类型：工具错误 */
+    public static final String ERROR_TYPE_TOOL_ERROR = "tool_error";
 
     /**
      * 是否成功。

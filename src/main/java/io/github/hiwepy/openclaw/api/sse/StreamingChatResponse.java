@@ -1,6 +1,7 @@
 package io.github.hiwepy.openclaw.api.sse;
 
 import io.github.hiwepy.openclaw.api.model.ChatChunk;
+import lombok.Getter;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -8,6 +9,7 @@ import java.util.function.Consumer;
 public class StreamingChatResponse extends CompletableFuture<ChatChunk>
         implements SseEventHandler {
 
+    @Getter
     private final SseEventAccumulator accumulator = new SseEventAccumulator();
     private Consumer<String> deltaConsumer;
 
@@ -18,7 +20,9 @@ public class StreamingChatResponse extends CompletableFuture<ChatChunk>
 
     @Override
     public void onEvent(SseEvent event) {
-        if (event.isTerminal()) return;
+        if (event.isTerminal()) {
+            return;
+        }
         Object p = event.getParsed(); ChatChunk chunk = p instanceof ChatChunk ? (ChatChunk) p : null;
         if (chunk == null) {
             return;
@@ -39,5 +43,4 @@ public class StreamingChatResponse extends CompletableFuture<ChatChunk>
     @Override
     public void onError(Throwable error) { completeExceptionally(error); }
 
-    public SseEventAccumulator getAccumulator() { return accumulator; }
 }

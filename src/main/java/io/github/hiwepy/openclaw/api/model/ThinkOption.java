@@ -1,4 +1,4 @@
-package io.github.hiwepy.openclaw.api;
+package io.github.hiwepy.openclaw.api.model;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -12,7 +12,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Arrays;
 
 /**
  * Controls whether thinking/reasoning models expose their reasoning trace.

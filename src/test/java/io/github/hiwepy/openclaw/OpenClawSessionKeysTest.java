@@ -1,6 +1,6 @@
 package io.github.hiwepy.openclaw;
 
-import io.github.hiwepy.openclaw.api.InvokeAgentRequest;
+import io.github.hiwepy.openclaw.api.model.HookRequest;
 import io.github.hiwepy.openclaw.api.OpenClawGatewayHttpClient;
 import io.github.hiwepy.openclaw.api.OpenClawSessionKeys;
 import org.junit.jupiter.api.Test;
@@ -41,7 +41,7 @@ class OpenClawSessionKeysTest {
 
     @Test
     void agentOneShot_omitsSessionKeyInBody() {
-        InvokeAgentRequest r = new InvokeAgentRequest();
+        HookRequest r = new HookRequest();
         r.setMessage("ping"); r.setAgentId("main");
         Map<String, Object> body = OpenClawGatewayHttpClient.buildHooksAgentBody(r);
         assertFalse(body.containsKey("sessionKey"));
@@ -49,7 +49,7 @@ class OpenClawSessionKeysTest {
 
     @Test
     void agentWithStableSession_buildsExpectedBody() {
-        InvokeAgentRequest r = new InvokeAgentRequest();
+        HookRequest r = new HookRequest();
         r.setMessage("hello"); r.setAgentId("my-agent");
         r.setSessionKey(OpenClawSessionKeys.forStableSession("my-agent", "peer-1"));
         Map<String, Object> body = OpenClawGatewayHttpClient.buildHooksAgentBody(r);
@@ -59,7 +59,7 @@ class OpenClawSessionKeysTest {
 
     @Test
     void agentOneShotForPeer_buildsExpectedBody() {
-        InvokeAgentRequest r = new InvokeAgentRequest();
+        HookRequest r = new HookRequest();
         r.setMessage("ping"); r.setAgentId("main");
         r.setSessionKey(OpenClawSessionKeys.forEphemeralPeer("u1", "corr-1"));
         Map<String, Object> body = OpenClawGatewayHttpClient.buildHooksAgentBody(r);
@@ -68,9 +68,9 @@ class OpenClawSessionKeysTest {
 
     @Test
     void agentWithStableSession_fromRequestAgentId() {
-        InvokeAgentRequest source = new InvokeAgentRequest();
+        HookRequest source = new HookRequest();
         source.setMessage("hello"); source.setAgentId("my-agent");
-        InvokeAgentRequest copy = OpenClawClient.copyRequest(source);
+        HookRequest copy = OpenClawClient.copyRequest(source);
         copy.setSessionKey(OpenClawSessionKeys.forStableSession(source.getAgentId(), "peer-2"));
         Map<String, Object> body = OpenClawGatewayHttpClient.buildHooksAgentBody(copy);
         assertEquals("hook:my-agent:peer-2", body.get("sessionKey"));

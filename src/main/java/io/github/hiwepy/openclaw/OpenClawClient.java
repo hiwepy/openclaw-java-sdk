@@ -20,7 +20,7 @@ import io.github.hiwepy.openclaw.ws.protocol.result.SessionsSendResult;
 
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -115,7 +115,7 @@ public class OpenClawClient implements AutoCloseable {
     /**
      * 通过 Gateway HTTP Webhook（{@code POST /hooks/agent}）触发智能体。
      */
-    public InvokeAgentResult agent(InvokeAgentRequest request) {
+    public HookResponse agent(HookRequest request) {
         return gatewayHttpClient.postHooksAgent(request);
     }
 
@@ -123,36 +123,36 @@ public class OpenClawClient implements AutoCloseable {
     /**
      * 一次性调用（无会话保持）。
      */
-    public InvokeAgentResult agentOneShot(InvokeAgentRequest request) {
+    public HookResponse agentOneShot(HookRequest request) {
         return agent(request);
     }
 
     /**
      * 带 peer 的一次性调用。
      */
-    public InvokeAgentResult agentOneShotForPeer(String peerId, InvokeAgentRequest request) {
+    public HookResponse agentOneShotForPeer(String peerId, HookRequest request) {
         return agent(request);
     }
 
     /**
      * 带 peer 和 correlationId 的一次性调用。
      */
-    public InvokeAgentResult agentOneShotForPeer(String peerId, String correlationId, InvokeAgentRequest request) {
+    public HookResponse agentOneShotForPeer(String peerId, String correlationId, HookRequest request) {
         return agent(request);
     }
 
     /**
      * 稳定会话调用。
      */
-    public InvokeAgentResult agentWithStableSession(String agentId, String peerId, InvokeAgentRequest request) {
+    public HookResponse agentWithStableSession(String agentId, String peerId, HookRequest request) {
         return agent(request);
     }
 
     /**
-     * @deprecated 请改用 {@link #agent(io.github.hiwepy.openclaw.api.InvokeAgentRequest)}
+     * @deprecated 请改用 {@link #agent(HookRequest)}
      */
     @Deprecated
-    public InvokeAgentResult invokeViaGateway(InvokeAgentRequest request) {
+    public HookResponse invokeViaGateway(HookRequest request) {
         return agent(request);
     }
 
@@ -293,8 +293,6 @@ public class OpenClawClient implements AutoCloseable {
      * 发送 Chat Completions 请求（非流式）。
      * <p>
      * 快捷方式，等价于 {@code openai().chatCompletion(request)}。
-     * Agent 目标通过 {@code request.model} 指定（如 {@code "openclaw/default"}）。
-     * 如需覆盖后端模型，使用 {@link OpenClawOpenAiHttpClient} 的方法并设置 {@code x-openclaw-model} 头。
      * </p>
      *
      * @param request 请求体
@@ -305,30 +303,113 @@ public class OpenClawClient implements AutoCloseable {
     }
 
     /**
-     * 发送 chat completion 请求，携带自定义请求头（如 session-key 实现会话路由）。
+     * 发送 chat completion 请求，携带自定义请求头。
      *
      * @param request 请求体
-     * @param headers 自定义请求头（可通过 {@link OpenClawHeaders.Builder} 构建）
+     * @param headers 自定义请求头
      * @return Chat Completions 响应
      */
-    public ChatResponse chatCompletion(ChatRequest request, Map<String, String> headers) {
+    public ChatResponse chatCompletion(ChatRequest request, OpenClawHeaders.Builder headers) {
         return openAiHttpClient.chatCompletion(request, headers);
     }
 
     /**
      * 发送 chat completion 请求，按 sessionKey 路由会话。
-     * <p>sessionKey 通过 {@code x-openclaw-session-key} header 传递，Gateway 自动路由/创建会话。
-     * 建议用 {@link OpenClawSessionKeys} 生成 sessionKey。</p>
      *
      * @param request    请求体
      * @param sessionKey 会话路由 key（如 {@code hook:<agentId>:<peerId>}）
      * @return Chat Completions 响应
      */
     public ChatResponse chatCompletionWithSession(ChatRequest request, String sessionKey) {
-        java.util.Map<String, String> headers = OpenClawHeaders.builder()
-                .sessionKey(sessionKey)
-                .build();
-        return openAiHttpClient.chatCompletion(request, headers);
+        return chatCompletion(request, OpenClawHeaders.builder().sessionKey(sessionKey));
+    }
+
+    // ----------------------------------------------------------------
+    // Convenience methods（便捷方法）
+    // ----------------------------------------------------------------
+
+    /**
+     * 发送 chat completion 请求（简洁写法）。
+     * <p>
+     * 示例：
+     * <pre>{@code
+     * client.chatCompletion("openclaw/default", List.of(ChatMessage.ofUser("Hello")));
+     * }</pre>
+     * </p>
+     *
+     * @param agent    Agent 目标（如 {@code "openclaw/default"}）
+     * @param messages 消息列表
+     * @return Chat Completions 响应
+     */
+    public ChatResponse chatCompletion(String agent, List<ChatMessage> messages) {
+        return this.chatCompletion(ChatRequest.builder().agent(agent).messages(messages).build());
+    }
+
+    /**
+     * 发送 chat completion 请求（指定 Agent 和后端模型）。
+     * <p>
+     * 示例：
+     * <pre>{@code
+     * client.chatCompletion("openclaw/default", "gpt-4o", List.of(ChatMessage.ofUser("Hello")));
+     * }</pre>
+     * </p>
+     *
+     * @param agent    Agent 目标（如 {@code "openclaw/default"}）
+     * @param model    后端 LLM 模型（如 {@code "gpt-4o"}）
+     * @param messages 消息列表
+     * @return Chat Completions 响应
+     */
+    public ChatResponse chatCompletion(String agent, String model, List<ChatMessage> messages) {
+        return this.chatCompletion(ChatRequest.builder().agent(agent).model(model).messages(messages).build());
+    }
+
+    /**
+     * 发送 chat completion 请求（指定 Agent、模型和用户标识）。
+     *
+     * @param agent    Agent 目标
+     * @param model    后端 LLM 模型
+     * @param user     用户标识（用于派生稳定 session）
+     * @param messages 消息列表
+     * @return Chat Completions 响应
+     */
+    public ChatResponse chatCompletion(String agent, String model, String user, List<ChatMessage> messages) {
+        return this.chatCompletion(ChatRequest.builder().agent(agent).model(model).user(user).messages(messages).build());
+    }
+
+    /**
+     * 发送流式 chat completion 请求（指定 Agent）。
+     *
+     * @param agent    Agent 目标
+     * @param messages 消息列表
+     * @return 流式响应
+     */
+    public StreamingChatResponse chatCompletionStream(String agent, List<ChatMessage> messages) {
+        return this.chatCompletionStream(ChatRequest.builder().agent(agent).messages(messages).build());
+    }
+
+    /**
+     * 发送流式 chat completion 请求（指定 Agent 和后端模型）。
+     *
+     * @param agent    Agent 目标
+     * @param model    后端 LLM 模型
+     * @param messages 消息列表
+     * @return 流式响应
+     */
+    public StreamingChatResponse chatCompletionStream(String agent, String model, List<ChatMessage> messages) {
+        return this.chatCompletionStream(ChatRequest.builder().agent(agent).model(model).messages(messages).build());
+    }
+
+    /**
+     * 发送流式 chat completion 请求（指定 Agent、模型和用户标识）。
+     *
+     * @param agent    Agent 目标
+     * @param model    后端 LLM 模型
+     * @param user     用户标识（用于派生稳定 session）
+     * @param messages 消息列表
+     * @return 流式响应
+     */
+    public StreamingChatResponse chatCompletionStream(String agent, String model, String user, List<ChatMessage> messages) {
+        return this.chatCompletionStream(ChatRequest.builder().agent(agent).model(model).user(user).messages(messages).build());
     }
 
     // ----------------------------------------------------------------
@@ -406,6 +487,20 @@ public class OpenClawClient implements AutoCloseable {
         return openAiHttpClient.createResponse(request);
     }
 
+    /**
+     * 发送流式 OpenResponses 请求。
+     * <p>
+     * 流式事件类型：{@code response.created}、{@code response.in_progress}、{@code response.output_item.added} 等。
+     * 流以 {@code data: [DONE]} 结束。
+     * </p>
+     *
+     * @param request 请求体
+     * @return OkHttp 响应
+     */
+    public okhttp3.Response createResponseStream(ResponseRequest request) {
+        return openAiHttpClient.createResponseStream(request);
+    }
+
     // ============================================================
     // Tools Invoke（/tools/invoke）
     // ============================================================
@@ -477,11 +572,11 @@ public class OpenClawClient implements AutoCloseable {
     // ============================================================
 
     /**
-     * 复制 {@link io.github.hiwepy.openclaw.api.InvokeAgentRequest} 并设置 session key。
+     * 复制 {@link HookRequest} 并设置 session key。
      * <p>用于 {@link OpenClawSessionKeys} 的辅助方法。</p>
      */
-    public static InvokeAgentRequest copyRequest(InvokeAgentRequest request) {
-        InvokeAgentRequest copy = new InvokeAgentRequest();
+    public static HookRequest copyRequest(HookRequest request) {
+        HookRequest copy = new HookRequest();
         copy.setMessage(request.getMessage());
         copy.setAgentId(request.getAgentId());
         copy.setName(request.getName());

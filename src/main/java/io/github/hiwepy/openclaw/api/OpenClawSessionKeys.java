@@ -1,5 +1,7 @@
 package io.github.hiwepy.openclaw.api;
 
+import io.github.hiwepy.openclaw.api.model.HookRequest;
+
 import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
@@ -31,7 +33,7 @@ public final class OpenClawSessionKeys {
     /**
      * 固定多轮会话：{@code hook:<agentId>:<peerId>}。
      *
-     * @param agentId 路由 agent，与 {@link InvokeAgentRequest#setAgentId} 一致
+     * @param agentId 路由 agent，与 {@link HookRequest#setAgentId} 一致
      * @param peerId  业务 peer（如 userId、工单 id）；不可含 {@code :}
      */
     public static String forStableSession(String agentId, String peerId) {
