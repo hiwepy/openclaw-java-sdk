@@ -1,5 +1,7 @@
 package io.github.hiwepy.openclaw.ws;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.hiwepy.openclaw.OpenClawHttpClientConfig;
 import io.github.hiwepy.openclaw.ws.protocol.*;
 import io.github.hiwepy.openclaw.ws.protocol.params.SessionsListParams;
@@ -17,9 +19,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class OpenClawWsProtocolTest {
 
-    private final com.fasterxml.jackson.databind.ObjectMapper mapper =
-            new com.fasterxml.jackson.databind.ObjectMapper()
-                    .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    private final ObjectMapper mapper =
+            new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @Test
     void testConnectParamsToMap() {
