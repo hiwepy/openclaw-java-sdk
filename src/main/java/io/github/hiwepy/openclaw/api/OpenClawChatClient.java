@@ -75,6 +75,7 @@ public class OpenClawChatClient extends OpenClawHttpClient {
                 .presencePenalty(request.getPresencePenalty())
                 .seed(request.getSeed())
                 .stop(request.getStop())
+                .responseFormat(request.getResponseFormat())
                 .build();
 
         String json;

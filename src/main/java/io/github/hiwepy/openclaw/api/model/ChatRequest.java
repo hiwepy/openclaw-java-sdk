@@ -134,6 +134,17 @@ public class ChatRequest {
     private Integer seed;
 
     /**
+     * 响应格式控制。
+     * <p>使用 {@link ResponseFormat} 构建，支持三种模式：
+     * {@link ResponseFormat#jsonObject()} 强制 JSON 输出（最常用）、
+     * {@link ResponseFormatType#JSON_SCHEMA} 结构化输出、
+     * {@link ResponseFormatType#TEXT} 默认文本。</p>
+     *
+     * @see ResponseFormat
+     */
+    private ResponseFormat responseFormat;
+
+    /**
      * 停止序列（字符串或最多 4 个字符串的数组）。
      * <p>超过 4 个序列或非字符串/空条目返回 {@code 400 invalid_request_error}。</p>
      */
