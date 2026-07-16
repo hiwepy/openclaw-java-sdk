@@ -431,8 +431,15 @@ client.chatCompletion(req, headers);
 
 ## 发布与 JDK
 
-- 本模块要求 **JDK 17**（见 `pom.xml` 中 `maven-enforcer-plugin`）。
-- 发布快照/正式版：
+| 分支 | 版本 | JDK | 用途 |
+|------|------|-----|------|
+| `feature/1.0.x` | `1.0.x.20260630-SNAPSHOT` | 1.8 | 兼容老项目、Spring Boot 2.x starter |
+| `feature/2.0.x` | `2.0.x.20260630-SNAPSHOT` | 17 | 主流线、Spring Boot 3.x starter |
+| `feature/3.0.x` | `3.0.x.20260630-SNAPSHOT` | 21 | 新项目、Spring Boot 4.x starter |
+| `main` | `2.0.x.20260630-SNAPSHOT` | 17 | 默认分支，与 `feature/2.0.x` 保持一致 |
+
+- 各分支的最低 JDK 要求由 `pom.xml` 中的 `<java.version>` 与 `maven-enforcer-plugin` 共同决定。
+- 发布快照/正式版（在对应分支下，使用对应 JDK）：
 
 ```bash
 mvn clean deploy -DskipTests
