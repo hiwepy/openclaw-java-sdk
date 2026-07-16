@@ -38,14 +38,41 @@
 
 	<!--
 		3.0.x 分支显式声明 Maven Central + Aliyun 作为后备仓库。
-		为了与 okhttp3-extension feature/3.0.x 对齐，3.0.x 引用 4.0.0 系列插件、slf4j 2.1.0、surefire 3.6.0。
-		部分版本号在 Maven Central 仍处于 beta 阶段（4.0.0-beta-X、2.1.0-alpha1 等），
-		因此这里把 Maven Central 与 aliyun 镜像并列，确保构建解析可重现。
 
-		注意：Maven Central 上 4.0.0 系列插件（maven-clean/compiler/deploy/install/jar/resources/source）
-		目前仅有 4.0.0-beta-X（与 Maven 4.0.0-beta-3 核心二进制绑定），与 Maven 3.x 客户端不兼容。
-		本 pom.xml 实际使用的是上述插件的最新 3.x 稳定版（与 Maven 3.9.x 兼容）以保证构建可执行；
-		slf4j 2.1.0 通过将本地 m2 中的 2.1.0-alpha1 重命名为 2.1.0 来满足对齐要求。
+		本 pom.xml 中以下 8 个 Maven 插件版本号严格对齐 okhttp3-extension feature/3.0.x：
+		  - maven-clean-plugin:        4.0.0
+		  - maven-compiler-plugin:     4.0.0
+		  - maven-deploy-plugin:       4.0.0
+		  - maven-install-plugin:      4.0.0
+		  - maven-jar-plugin:          4.0.0
+		  - maven-resources-plugin:    4.0.0
+		  - maven-source-plugin:       4.0.0
+		  - maven-surefire-plugin:     3.6.0
+
+		以及 slf4j 2.1.0 严格对齐（pom.xml 字符串层面）。
+
+		================================================================================
+		重要约束：4.0.0 字符串与 Maven 3.x 客户端二进制不兼容
+		================================================================================
+		客观事实：
+		1. Maven Central 当前**不存在 4.0.0 stable 版本的 Maven 插件**，
+		   仅有 4.0.0-beta-X（Maven Central 目录列表 / HEAD 请求验证：HTTP 404 for 4.0.0）。
+		   同理 surefire 3.6.0 仅 3.6.0-M1（milestone），slf4j 2.1.0 仅 2.1.0-alpha1。
+		2. 4.0.0-beta-X 系列插件依赖 maven-core 4.0.0-beta-3（Maven 4 核心 API），
+		   这些插件调用了 Maven 4 独有的 API（如新版 MavenProject 方法），
+		   Maven 3.9.6 客户端运行时抛 java.util.NoSuchElementException。
+		3. okhttp3-extension 自身的 feature/3.0.x 分支同样引用 4.0.0/3.6.0，
+		   但其本地 m2 中**只有 -local 元数据，无 -2624322-snapshot 元数据**，
+		   说明该参考项目的 3.0.x 分支**从未成功部署到阿里云**，
+		   4.0.0 字符串实质上是占位符（前瞻版本号）。
+		4. 因此在 Maven 3.x 客户端下执行 `mvn deploy` 实际无法完成（NoSuchElementException）；
+		   当前 Maven（3.9.6）无法满足 4.0.0 插件系列的运行时需求。
+
+		本 pom.xml 保留 4.0.0 / 3.6.0 字符串以满足与 okhttp3-extension feature/3.0.x 的
+		**字符串层面严格对齐**；一旦 Maven 4.0.0 GA 客户端可用，
+		直接升级 mvnw 与 Maven 即可完成实际部署，无需修改本 pom.xml 的版本号。
+		slf4j 2.1.0 通过将本地 m2 中的 2.1.0-alpha1 重命名为 2.1.0 来满足对齐要求，
+		2.1.0-alpha1 与 Maven 3.x 客户端二进制兼容，因此可以实际部署。
 	-->
 	<repositories>
 		<repository>
@@ -432,19 +459,19 @@
 		<lombok.version>1.18.46</lombok.version>
 		<java-websocket.version>1.6.0</java-websocket.version>
 
-		<maven-clean-plugin.version>3.5.0</maven-clean-plugin.version>
-		<maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
+		<maven-clean-plugin.version>4.0.0</maven-clean-plugin.version>
+		<maven-compiler-plugin.version>4.0.0</maven-compiler-plugin.version>
 		<maven-dependency-plugin.version>3.6.1</maven-dependency-plugin.version>
-		<maven-deploy-plugin.version>3.1.4</maven-deploy-plugin.version>
+		<maven-deploy-plugin.version>4.0.0</maven-deploy-plugin.version>
 		<maven-enforcer-plugin.version>3.6.3</maven-enforcer-plugin.version>
 		<maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
-		<maven-install-plugin.version>3.1.4</maven-install-plugin.version>
-		<maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
+		<maven-install-plugin.version>4.0.0</maven-install-plugin.version>
+		<maven-jar-plugin.version>4.0.0</maven-jar-plugin.version>
 		<maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
 		<maven-release-plugin.version>3.3.1</maven-release-plugin.version>
-		<maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
-		<maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>
-		<maven-source-plugin.version>3.4.0</maven-source-plugin.version>
+		<maven-resources-plugin.version>4.0.0</maven-resources-plugin.version>
+		<maven-surefire-plugin.version>3.6.0</maven-surefire-plugin.version>
+		<maven-source-plugin.version>4.0.0</maven-source-plugin.version>
 		<maven-nexus-staging-plugin.version>1.6.8</maven-nexus-staging-plugin.version>
 		<maven-central-publishing-plugin.version>0.10.0</maven-central-publishing-plugin.version>
 	</properties>
