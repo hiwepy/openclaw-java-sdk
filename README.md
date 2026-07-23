@@ -20,8 +20,8 @@ Spring Boot 应用请使用 [openclaw-spring-boot-starter](../openclaw-spring-bo
 ## 快速开始
 
 ```java
-import io.github.hiwepy.openclaw.*;
-import io.github.hiwepy.openclaw.api.model.*;
+import io.github.easy4j.openclaw.*;
+import io.github.easy4j.openclaw.api.model.*;
 
 // 1. 配置
 OpenClawClientConfig config = new OpenClawClientConfig();
@@ -86,7 +86,7 @@ SDK 提供了清晰的 `agent` / `model` 分离：
 ### Chat Completions（非流式）
 
 ```java
-import io.github.hiwepy.openclaw.api.model.*;
+import io.github.easy4j.openclaw.api.model.*;
 
 // 方式1：Builder（推荐）
 ChatRequest req = ChatRequest.builder()
@@ -116,7 +116,7 @@ String answer = resp.getChoices().get(0).getMessage().getContent();
 ### Chat Completions（流式 SSE）
 
 ```java
-import io.github.hiwepy.openclaw.api.sse.StreamingChatResponse;
+import io.github.easy4j.openclaw.api.sse.StreamingChatResponse;
 
 ChatRequest req = ChatRequest.builder()
     .agent("openclaw/default")
@@ -343,8 +343,8 @@ if (Boolean.TRUE.equals(result.getOk())) {
 对应文档：[Gateway Protocol](https://docs.openclaw.ai/gateway/protocol)
 
 ```java
-import io.github.hiwepy.openclaw.ws.*;
-import io.github.hiwepy.openclaw.ws.protocol.*;
+import io.github.easy4j.openclaw.ws.*;
+import io.github.easy4j.openclaw.ws.protocol.*;
 
 // 连接并握手
 HelloOk hello = client.connect();
